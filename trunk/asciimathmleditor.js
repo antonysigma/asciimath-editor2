@@ -44,14 +44,14 @@ function AMnode2string(inNode,indent) {
 // thanks to James Frazer for contributing an initial version of this function
    var i, str = "";
    if(inNode.nodeType == 1) {
-       var name = inNode.nodeName.toLowerCase(); // (IE fix)
+       var name = inNode[0].nodeName.toLowerCase(); // (IE fix)
        str = "\r" + indent + "<" + name;
        for(i=0; i < inNode.attributes.length; i++)
            if (inNode.attributes[i].nodeValue!="italic" &&
                inNode.attributes[i].nodeValue!="" &&  //stop junk attributes
                inNode.attributes[i].nodeValue!="inherit" && // (mostly IE)
                inNode.attributes[i].nodeValue!=undefined)
-               str += " "+inNode.attributes[i].nodeName+"="+
+               str += " "+inNode.attributes[i][0].nodeName+"="+
                      "\""+inNode.attributes[i].nodeValue+"\"";
        if (name == "math") 
            str += " xmlns=\"http://www.w3.org/1998/Math/MathML\"";
@@ -98,7 +98,7 @@ renderQueue.runAll();
 
 function AMdisplay(now,transform) {
   if ($("#inputText") == null) return;
-    if (AMkeyspressed < 20 || !now) {
+    if (AMkeyspressed < 20 && !now) {
  AMkeyspressed++;return;}
 
 $('body').css('cursor','progress');
