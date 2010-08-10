@@ -21,6 +21,7 @@ General Public License (at http://www.gnu.org/copyleft/gpl.html)
 for more details.
 */
 
+
 var AMkeyspressed = 20;
 
 function initEditor() {
@@ -31,7 +32,13 @@ function initEditor() {
     var nd = AMisMathMLavailable();
     if (nd != null) body.insertBefore(nd,body.childNodes[0]);
   }
-  AMdisplay(true);
+  
+  if(isIE){
+xsl = new ActiveXObject("Microsoft.XMLDOM");
+xsl.async = false;
+xsl.load("pmathmlcss.xsl");
+}
+  AMdisplay(true,true);
 }
 
 function AMnode2string(inNode,indent) {
@@ -68,7 +75,29 @@ function AMnode2string(inNode,indent) {
    return str;
 } 
 
-function AMdisplay(now) {
+function transformMathML(node)
+{
+var xml = new ActiveXObject("Microsoft.XMLDOM");
+xml.async = false;
+
+var outstr = AMnode2string(node,"").slice(22).slice(0,-6);
+outstr = '<?xml version="1.0" ?><span xmlns="http://www.w3.org/1999/xhtml" '+
+'xmlns:mml="http://www.w3.org/1998/Math/MathML">'+outstr+'<\/span>';
+xml.loadXML(outstr);
+
+var html = xml.transformNode(xsl);
+node.innerHTML = html;
+var scriptObj = node.getElementsByTagName('script');
+//just to make sure all scripts are loaded
+for(var i=0;i<scriptObj.length;i++)
+try {
+eval(scriptObj[i].innerHTML);
+}catch(e){}
+
+renderQueue.runAll();
+}
+
+function AMdisplay(now,transform) {
   if (document.getElementById("inputText") != null) {
     if (AMkeyspressed == 20 || now) {
       var str = document.getElementById("inputText").value;
@@ -80,13 +109,18 @@ function AMdisplay(now) {
       outnode = document.getElementById("outputNode");
       var arr = str.split((isIE?"\r\n\r\n":"\n\n"));
       for (var i = 0; i<arr.length; i++){
-        outnode.appendChild(document.createTextNode(arr[i]+"``"));
         var spn = AMcreateElementXHTML("p");
+        spn.appendChild(document.createTextNode(arr[i]));
         outnode.appendChild(spn);
       }
       if (!isIE) LMprocessNode(outnode,true);
       AMprocessNode(outnode,true);
-      if (isIE) LMprocessNode(outnode,true);
+      if (isIE){
+       LMprocessNode(outnode,true);
+      
+      if(transform) transformMathML(outnode);
+       }
+      
       AMkeyspressed = 0;
     } else AMkeyspressed++;
   }
@@ -109,8 +143,9 @@ function AMviewMathML() {
   var str = document.getElementById("inputText").value;
   var outnode = document.getElementById("outputNode");
   var outstr = AMnode2string(outnode,"").slice(22).slice(0,-6);
-  outstr = '<?xml version="1.0"?>\r\<!-- Copy of ASCIIMathML input\r'+str+
-'-->\r<?xml-stylesheet type="text/xsl" href="http://www1.chapman.edu/~jipsen/mathml/pmathml.xsl"?>\r\
+  outstr = '<?xml version="1.0"?>\r\<!-- Copy of ASCIIMathML input\r'+
+  str.replace(/</g,'&lt;').replace(/>/g,'&gt;')+
+'-->\r<?xml-stylesheet type="text/xsl" href="mathml.xsl"?>\r\
 <html xmlns="http://www.w3.org/1999/xhtml"\r\
   xmlns:mml="http://www.w3.org/1998/Math/MathML">\r\
 <head>\r<title>...</title>\r</head>\r<body>\r'+
@@ -161,6 +196,6 @@ function LMprocessNode(n, linebreaks, spanclassLM) {
   }
   if (isIE) { //needed to match size and font of formula to surrounding text
     frag = document.getElementsByTagName('math');
-    for (var i=0;i<frag.length;i++) frag[i].update()
+    for (var i=0;i<frag.length;i++) try{frag[i].update()}catch(e){}
   }
 }

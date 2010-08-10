@@ -34,12 +34,12 @@ FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License
 (at http://www.gnu.org/licences/lgpl.html) for more details.
 */
 
-var mathcolor = "blue";        // change it to "" (to inherit) or another color
+var mathcolor = "";        // change it to "" (to inherit) or another color
 var mathfontsize = "1em";      // change to e.g. 1.2em for larger math
 var mathfontfamily = "serif";  // change to "" to inherit (works in IE) 
                                // or another family (e.g. "arial")
 var automathrecognize = false; // writing "amath" on page makes this true
-var checkForMathML = true;     // check if browser can display MathML
+var checkForMathML = false;     // check if browser can display MathML
 var notifyIfNoMathML = true;   // display note at top if no MathML capability
 var alertIfNoMathML = false;   // show alert box if no MathML capability
 var translateOnLoad = true;    // set to false to do call translators from js 
@@ -49,7 +49,7 @@ var translateASCIIMath = true; // false to preserve `..`
 var translateASCIIsvg = true;  // false to preserve agraph.., \begin{graph}..
 var avoidinnerHTML = false;   // set true if assigning to innerHTML gives error
 var displaystyle = true;      // puts limits above and below large operators
-var showasciiformulaonhover = true; // helps students learn ASCIIMath
+var showasciiformulaonhover = false; // helps students learn ASCIIMath
 var decimalsign = ".";        // change to "," if you like, beware of `(1,2)`!
 var AMdelimiter1 = "`", AMescape1 = "\\\\`"; // can use other characters
 var AMdocumentId = "wikitext" // PmWiki element containing math (default=body)
@@ -918,7 +918,7 @@ function AMprocessNode(n, linebreaks, spanclassAM) {
   }
   if (isIE) { //needed to match size and font of formula to surrounding text
     frag = document.getElementsByTagName('math');
-    for (var i=0;i<frag.length;i++) frag[i].update()
+    for (var i=0;i<frag.length;i++) try{frag[i].update()}catch(e){}
   }
 }
 
