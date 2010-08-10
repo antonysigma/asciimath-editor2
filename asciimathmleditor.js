@@ -21,15 +21,15 @@ General Public License (at http://www.gnu.org/copyleft/gpl.html)
 for more details.
 */
 
-
+var isIE = $.browser.msie==true;
 var AMkeyspressed = 20;
 
 function initEditor() {
-  AMinitSymbols();
+  initSymbols();
   var body = document.getElementsByTagName("body")[0];
   if (checkForMathML) {
     checkForMathML = false;
-    var nd = AMisMathMLavailable();
+    var nd = checkMathML();
     if (nd != null) body.insertBefore(nd,body.childNodes[0]);
   }
   
@@ -102,14 +102,14 @@ function AMdisplay(now,transform) {
     if (AMkeyspressed == 20 || now) {
       var str = document.getElementById("inputText").value;
       var outnode = document.getElementById("outputNode");
-      var newnode = AMcreateElementXHTML("div");
+      var newnode = createElementXHTML("div");
       var newFrag = document.createDocumentFragment();
       newnode.setAttribute("id","outputNode");
       outnode.parentNode.replaceChild(newnode,outnode);
       outnode = document.getElementById("outputNode");
       var arr = str.split((isIE?"\r\n\r\n":"\n\n"));
       for (var i = 0; i<arr.length; i++){
-        var spn = AMcreateElementXHTML("p");
+        var spn = createElementXHTML("p");
         spn.appendChild(document.createTextNode(arr[i]));
         outnode.appendChild(spn);
       }
@@ -150,52 +150,11 @@ function AMviewMathML() {
   xmlns:mml="http://www.w3.org/1998/Math/MathML">\r\
 <head>\r<title>...</title>\r</head>\r<body>\r'+
 outstr+'<\/body>\r<\/html>\r';
-  var newnode = AMcreateElementXHTML("textarea");
+  var newnode = createElementXHTML("textarea");
   newnode.setAttribute("id","outputNode");
   newnode.setAttribute("rows","30");
   var node = document.getElementById("inputText");
   newnode.setAttribute("cols",node.getAttribute("cols"));
   newnode.appendChild(document.createTextNode(outstr));
   outnode.parentNode.replaceChild(newnode,outnode);
-}
-
-// had to redefine the following ASCIIMathML.js function since
-// two lines in it need to be commented out 
-
-function LMprocessNode(n, linebreaks, spanclassLM) {
-  var frag,st;
-  if (spanclassLM!=null) {
-    frag = document.getElementsByTagName("span")
-    for (var i=0;i<frag.length;i++)
-      if (frag[i].className == "LM")
-        LMprocessNodeR(frag[i],linebreaks);
-  } else {
-    try {
-      st = n.innerHTML;
-    } catch(err) {}
-    var am = /amath|agraph/i.test(st);
-    if ((st==null || st.indexOf("\$ ")!=-1 || st.indexOf("\$<")!=-1 || 
-         st.indexOf("\\begin")!=-1 || am || st.slice(-1)=="$" ||
-         st.indexOf("\$\n")!=-1)&& !/edit-content|HTMLArea|wikiedit/.test(st)){
-      if (!avoidinnerHTML && translateLaTeXformatting) 
-        st = simpleLaTeXformatting(st);
-      if (st!=null && am && !avoidinnerHTML) {
-//alert(st)
-        st = st.replace(/<sup>(.*?)<\/sup>(\s|(\S))/gi,"^{$1} $3");
-//        st = st.replace(/<\/?font.*?>/gi,""); // do this only in amath...end
-        st = st.replace(/(Proof:)/g,"<i>$1</i>");
-        st = st.replace(/QED/g,"&#x25A1;");
-        //st = st.replace(/(\\?end{?a?math}?)/ig,"<span></span>$1");
-        //st = st.replace(/(\bamath|\\begin{a?math})/ig,"<span></span>$1");
-        st = st.replace(/([>\n])(Theorem|Lemma|Proposition|Corollary|Definition|Example|Remark|Problem|Exercise|Conjecture|Solution)(:|\W\W?(\w|\.)*?\W?:)/g,"$1<b>$2$3</b>");
-      }
-      st = st.replace(/%7E/g,"~");
-      if (!avoidinnerHTML) n.innerHTML = st;
-      LMprocessNodeR(n,linebreaks);
-    }
-  }
-  if (isIE) { //needed to match size and font of formula to surrounding text
-    frag = document.getElementsByTagName('math');
-    for (var i=0;i<frag.length;i++) try{frag[i].update()}catch(e){}
-  }
 }
