@@ -149,10 +149,10 @@ function displayWarnings(warnings) {
 function translate(spanclassAM) {
   if (!translated) { // run this only once
     translated = true;
-    var body = document.getElementsByTagName("body")[0];
-    var processN = document.getElementById(AMdocumentId);
-    if (translateLaTeX) LMprocessNode((processN!=null?processN:body));
-    if (translateASCIIMath) AMprocessNode((processN!=null?processN:body), false, spanclassAM);
+    var body = $('body');
+    var processN = $('#'+AMdocumentId);
+    if (translateLaTeX) LMprocessNode((processN.length!=0?processN:body));
+    if (translateASCIIMath) AMprocessNode((processN.length!=0?processN:body), false, spanclassAM);
   }
 }
 
@@ -908,12 +908,10 @@ function AMautomathrec(str) {
 
 function processNodeR(n, linebreaks,latex) {
   var mtch, str, arr, frg, i;
-  if (n.childNodes.length == 0) {
+  if (n.children() == null) {
    if ((n.nodeType!=8 || linebreaks) &&
-    n.parentNode.nodeName!="form" && n.parentNode.nodeName!="FORM" &&
-    n.parentNode.nodeName!="textarea" && n.parentNode.nodeName!="TEXTAREA" /*&&
-    n.parentNode.nodeName!="pre" && n.parentNode.nodeName!="PRE"*/) {
-    str = n.nodeValue;
+    n.parent("form textarea")==null) {
+    str = n.text();
     if (!(str == null)) {
       str = str.replace(/\r\n\r\n/g,"\n\n");
       str = str.replace(/\x20+/g," ");
@@ -946,16 +944,16 @@ function processNodeR(n, linebreaks,latex) {
       if (arr.length>1 || mtch) {
         if (!noMathML) {
           frg = strarr2docFrag(arr,n.nodeType==8,latex);
-          var len = frg.childNodes.length;
-          n.parentNode.replaceChild(frg,n);
-          return len-1;
+          n.replaceWith(frg);
+          return frg.children().length-1;
         } else return 0;
       }
     }
    } else return 0;
   } else if (n.nodeName!="math") {
-    for (i=0; i<n.childNodes.length; i++)
-      i += processNodeR(n.childNodes[i], linebreaks,latex);
+	var n_children = n.children();
+    for (i=0; i<n_children.length; i++)
+      i += processNodeR(n_children.eq(i), linebreaks,latex);
   }
   return 0;
 }
@@ -963,14 +961,12 @@ function processNodeR(n, linebreaks,latex) {
 function AMprocessNode(n, linebreaks, spanclassAM) {
   var frag,st;
   if (spanclassAM!=null) {
-    frag = document.getElementsByTagName("span")
+    frag = $("span");
     for (var i=0;i<frag.length;i++)
       if (frag[i].className == "AM") 
         processNodeR(frag[i],linebreaks,false);
   } else {
-    try {
-      st = n.innerHTML; // look for AMdelimiter on page
-    } catch(err) {}
+      st = n.html(); // look for AMdelimiter on page
 //alert(st)
     if (st==null || /amath\b|\\begin{a?math}/i.test(st) ||
       st.indexOf(AMdelimiter1+" ")!=-1 || st.slice(-1)==AMdelimiter1 ||
@@ -1969,9 +1965,7 @@ function ASCIIandgraphformatting(st) {
 
 function LMprocessNode(n) {
   var frag,st;
-  try {
-    st = n.innerHTML;
-  } catch(err) {}
+    st = n.html();
   var am = /amath\b|graph/i.test(st);
   if ((st==null || st.indexOf("\$ ")!=-1 || st.indexOf("\$<")!=-1 || 
        st.indexOf("\\begin")!=-1 || am || st.slice(-1)=="$" ||
@@ -1983,7 +1977,7 @@ function LMprocessNode(n) {
     }
     st = st.replace(/%7E/g,"~"); // else PmWiki has url issues
 //alert(st)
-    if (!avoidinnerHTML) n.innerHTML = st;
+    if (!avoidinnerHTML) n.html(st);
     processNodeR(n,false,true);
   }
 /*  if (isIE) { //needed to match size and font of formula to surrounding text

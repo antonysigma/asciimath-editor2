@@ -106,7 +106,7 @@ $('body').css('cursor','progress');
       var str = $("#inputText").val();
       var outnode = $("#outputNode");
       var newnode = $("<div>").attr('id','outputNode');
-      var newFrag = document.createDocumentFragment();
+      //var newFrag = document.createDocumentFragment();
       outnode.replaceWith(newnode);
       outnode = $("#outputNode");
       var arr = str.split((isIE?"\r\n\r\n":"\n\n"));
@@ -114,17 +114,17 @@ $('body').css('cursor','progress');
         var spn = $("<p>").html(arr[i]);
         outnode.append(spn);
       }
+	//which is first
       if (!isIE)
-{LMprocessNode(outnode,true);
-      AMprocessNode(outnode,true);}
-      else{
+LMprocessNode(outnode,true);
+      AMprocessNode(outnode,true);
+      if(isIE){
        LMprocessNode(outnode,true);
-      
       if(transform) transformMathML(outnode);
        }
-      
+
       AMkeyspressed = 0;
-$('body').css('cursor','progress');
+$('body').css('cursor','default');
 }
 
 function AMchangeColumns(n) {
