@@ -21,7 +21,6 @@ General Public License (at http://www.gnu.org/copyleft/gpl.html)
 for more details.
 */
 
-var isIE = $.browser.msie==true;
 var AMkeyspressed = 20;
 
 function initEditor() {

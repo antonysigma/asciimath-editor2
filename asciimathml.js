@@ -59,36 +59,18 @@ var dsvglocation = ""; // path to d.svg (blank if same as ASCIIMathML.js loc)
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-var isIE = document.createElementNS==null;
+var isIE = $.browser.msie!=null;
 var noMathML = false, translated = false;
 
 if (isIE) { // avoid adding MathPlayer info explicitly to each webpage
-  document.write("<object id=\"mathplayer\"\
-  classid=\"clsid:32F66A20-7614-11D4-BD11-00104BD3F987\"></object>");
-  document.write("<?import namespace=\"m\" implementation=\"#mathplayer\"?>");
+  $('body').append("<object id=\"mathplayer\"\
+  classid=\"clsid:32F66A20-7614-11D4-BD11-00104BD3F987\"></object>")
+  .append("<?import namespace=\"m\" implementation=\"#mathplayer\"?>");
 }
 
 // Add a stylesheet, replacing any previous custom stylesheet (adapted from TW)
 function setStylesheet(s) {
-	var id = "AMMLcustomStyleSheet";
-	var n = document.getElementById(id);
-	if(document.createStyleSheet) {
-		// Test for IE's non-standard createStyleSheet method
-		if(n)
-			n.parentNode.removeChild(n);
-		// This failed without the &nbsp;
-		document.getElementsByTagName("head")[0].insertAdjacentHTML("beforeEnd","&nbsp;<style id='" + id + "'>" + s + "</style>");
-	} else {
-		if(n) {
-			n.replaceChild(document.createTextNode(s),n.firstChild);
-		} else {
-			n = document.createElement("style");
-			n.type = "text/css";
-			n.id = id;
-			n.appendChild(document.createTextNode(s));
-			document.getElementsByTagName("head")[0].appendChild(n);
-		}
-	}
+	$("#AMMLcustomStyleSheet").text(s);
 }
 
 setStylesheet("#AMMLcloseDiv \{font-size:0.8em; padding-top:1em; color:#014\}\n#AMMLwarningBox \{position:absolute; width:100%; top:0; left:0; z-index:200; text-align:center; font-size:1em; font-weight:bold; padding:0.5em 0 0.5em 0; color:#ffc; background:#c30\}");
@@ -157,15 +139,15 @@ function translate(spanclassAM) {
 }
 
 function createElementXHTML(t) {
-  if (isIE) return document.createElement(t);
-  else return document.createElementNS("http://www.w3.org/1999/xhtml",t);
+  return $('<'+t+'>');
 }
 
 function createMmlNode(t,frag) {
-  if (isIE) var node = document.createElement("m:"+t);
-  else var node = document.createElementNS("http://www.w3.org/1998/Math/MathML",t);
-  if (frag) node.appendChild(frag);
-  return node;
+ if(typeof frag == 'String')
+  return $("<m:"+t+' xmlns:m="http://www.w3.org/1998/Math/MathML">'
+	+frag+ '<m:'+ t+'>');
+ else
+  return $("<m:"+t+' xmlns:m="http://www.w3.org/1998/Math/MathML">').append(frag);
 }
 
 // character lists for Mozilla/Netscape fonts
@@ -552,7 +534,7 @@ var AMnestingDepth,AMpreviousSymbol,AMcurrentSymbol;
 
 function AMparseSexpr(str) { //parses str and returns [node,tailstr]
   var symbol, node, result, i, st,// rightvert = false,
-    newFrag = document.createDocumentFragment();
+    newFrag = $('<frag>');
   str = AMremoveCharsAndBlanks(str,0);
   symbol = AMgetSymbol(str);             //either a token or a bracket or empty
   if (symbol == null || symbol.ttype == RIGHTBRACKET && AMnestingDepth > 0) {
@@ -566,7 +548,7 @@ function AMparseSexpr(str) { //parses str and returns [node,tailstr]
   case CONST:
     str = AMremoveCharsAndBlanks(str,symbol.input.length); 
     return [createMmlNode(symbol.tag,        //its a constant
-                             document.createTextNode(symbol.output)),str];
+                             symbol.output),str];
   case LEFTBRACKET:   //read (expr+)
     AMnestingDepth++;
     str = AMremoveCharsAndBlanks(str,symbol.input.length); 
@@ -575,9 +557,9 @@ function AMparseSexpr(str) { //parses str and returns [node,tailstr]
     if (typeof symbol.invisible == "boolean" && symbol.invisible) 
       node = createMmlNode("mrow",result[0]);
     else {
-      node = createMmlNode("mo",document.createTextNode(symbol.output));
+      node = createMmlNode("mo",symbol.output);
       node = createMmlNode("mrow",node);
-      node.appendChild(result[0]);
+      node.append(result[0]);
     }
     return [node,result[1]];
   case TEXT:
@@ -592,14 +574,14 @@ function AMparseSexpr(str) { //parses str and returns [node,tailstr]
       if (st.charAt(0) == " ") {
         node = createMmlNode("mspace");
         node.setAttribute("width","1ex");
-        newFrag.appendChild(node);
+        newFrag.append(node);
       }
-      newFrag.appendChild(
-        createMmlNode(symbol.tag,document.createTextNode(st)));
+      newFrag.append(
+        createMmlNode(symbol.tag,st));
       if (st.charAt(st.length-1) == " ") {
         node = createMmlNode("mspace");
         node.setAttribute("width","1ex");
-        newFrag.appendChild(node);
+        newFrag.append(node);
       }
       str = AMremoveCharsAndBlanks(str,i+1);
       return [createMmlNode("mrow",newFrag),str];
@@ -607,16 +589,16 @@ function AMparseSexpr(str) { //parses str and returns [node,tailstr]
       str = AMremoveCharsAndBlanks(str,symbol.input.length); 
       result = AMparseSexpr(str);
       if (result[0]==null) return [createMmlNode(symbol.tag,
-                             document.createTextNode(symbol.output)),str];
+                             symbol.output),str];
       if (typeof symbol.func == "boolean" && symbol.func) { // functions hack
         st = str.charAt(0);
         if (st=="^" || st=="_" || st=="/" || st=="|" || st==",") {
           return [createMmlNode(symbol.tag,
-                    document.createTextNode(symbol.output)),str];
+                    symbol.output),str];
         } else {
           node = createMmlNode("mrow",
-           createMmlNode(symbol.tag,document.createTextNode(symbol.output)));
-          node.appendChild(result[0]);
+           createMmlNode(symbol.tag,symbol.output));
+          node.append(result[0]);
           return [node,result[1]];
         }
       }
@@ -625,7 +607,7 @@ function AMparseSexpr(str) { //parses str and returns [node,tailstr]
         return [createMmlNode(symbol.tag,result[0]),result[1]];
       } else if (typeof symbol.acc == "boolean" && symbol.acc) {   // accent
         node = createMmlNode(symbol.tag,result[0]);
-        node.appendChild(createMmlNode("mo",document.createTextNode(symbol.output)));
+        node.append(createMmlNode("mo",symbol.output));
         return [node,result[1]];
       } else {                        // font change command
         if (!isIE && typeof symbol.codes != "undefined") {
@@ -640,9 +622,9 @@ function AMparseSexpr(str) { //parses str and returns [node,tailstr]
                 else newst = newst + st.charAt(j);
               if (result[0].nodeName=="mi")
                 result[0]=createMmlNode("mo").
-                          appendChild(document.createTextNode(newst));
+                          append(newst);
               else result[0].replaceChild(createMmlNode("mo").
-                               appendChild(document.createTextNode(newst)),
+                               append(newst),
                                            result[0].childNodes[i]);
             }
         }
@@ -654,30 +636,30 @@ function AMparseSexpr(str) { //parses str and returns [node,tailstr]
     str = AMremoveCharsAndBlanks(str,symbol.input.length); 
     result = AMparseSexpr(str);
     if (result[0]==null) return [createMmlNode("mo",
-                           document.createTextNode(symbol.input)),str];
+                           symbol.input),str];
     AMremoveBrackets(result[0]);
     var result2 = AMparseSexpr(result[1]);
     if (result2[0]==null) return [createMmlNode("mo",
-                           document.createTextNode(symbol.input)),str];
+                           symbol.input),str];
     AMremoveBrackets(result2[0]);
     if (symbol.input=="root" || symbol.input=="stackrel") 
-      newFrag.appendChild(result2[0]);
-    newFrag.appendChild(result[0]);
-    if (symbol.input=="frac") newFrag.appendChild(result2[0]);
+      newFrag.append(result2[0]);
+    newFrag.append(result[0]);
+    if (symbol.input=="frac") newFrag.append(result2[0]);
     return [createMmlNode(symbol.tag,newFrag),result2[1]];
   case INFIX:
     str = AMremoveCharsAndBlanks(str,symbol.input.length); 
-    return [createMmlNode("mo",document.createTextNode(symbol.output)),str];
+    return [createMmlNode("mo",symbol.output),str];
   case SPACE:
     str = AMremoveCharsAndBlanks(str,symbol.input.length); 
     node = createMmlNode("mspace");
     node.setAttribute("width","1ex");
-    newFrag.appendChild(node);
-    newFrag.appendChild(
-      createMmlNode(symbol.tag,document.createTextNode(symbol.output)));
+    newFrag.append(node);
+    newFrag.append(
+      createMmlNode(symbol.tag,symbol.output));
     node = createMmlNode("mspace");
     node.setAttribute("width","1ex");
-    newFrag.appendChild(node);
+    newFrag.append(node);
     return [createMmlNode("mrow",newFrag),str];
   case LEFTRIGHT:
 //    if (rightvert) return [null,str]; else rightvert = true;
@@ -689,12 +671,12 @@ function AMparseSexpr(str) { //parses str and returns [node,tailstr]
     if (result[0].lastChild!=null)
       st = result[0].lastChild.firstChild.nodeValue;
     if (st == "|") { // its an absolute value subterm
-      node = createMmlNode("mo",document.createTextNode(symbol.output));
+      node = createMmlNode("mo",symbol.output);
       node = createMmlNode("mrow",node);
-      node.appendChild(result[0]);
+      node.append(result[0]);
       return [node,result[1]];
     } else { // the "|" is a \mid so use unicode 2223 (divides) for spacing
-      node = createMmlNode("mo",document.createTextNode("\u2223"));
+      node = createMmlNode("mo","\u2223");
       node = createMmlNode("mrow",node);
       return [node,str];
     }
@@ -702,7 +684,7 @@ function AMparseSexpr(str) { //parses str and returns [node,tailstr]
 //alert("default");
     str = AMremoveCharsAndBlanks(str,symbol.input.length); 
     return [createMmlNode(symbol.tag,        //its a constant
-                             document.createTextNode(symbol.output)),str];
+                             symbol.output),str];
   }
 }
 
@@ -719,7 +701,7 @@ function AMparseIexpr(str) {
 //    if (symbol.input == "/") result = AMparseIexpr(str); else ...
     result = AMparseSexpr(str);
     if (result[0] == null) // show box in place of missing argument
-      result[0] = createMmlNode("mo",document.createTextNode("\u25A1"));
+      result[0] = createMmlNode("mo","\u25A1");
     else AMremoveBrackets(result[0]);
     str = result[1];
 //    if (symbol.input == "/") AMremoveBrackets(node);
@@ -732,16 +714,16 @@ function AMparseIexpr(str) {
         AMremoveBrackets(res2[0]);
         str = res2[1];
         node = createMmlNode((underover?"munderover":"msubsup"),node);
-        node.appendChild(result[0]);
-        node.appendChild(res2[0]);
+        node.append(result[0]);
+        node.append(res2[0]);
         node = createMmlNode("mrow",node); // so sum does not stretch
       } else {
         node = createMmlNode((underover?"munder":"msub"),node);
-        node.appendChild(result[0]);
+        node.append(result[0]);
       }
     } else {
       node = createMmlNode(symbol.tag,node);
-      node.appendChild(result[0]);
+      node.append(result[0]);
     }
   }
   return [node,str];
@@ -749,7 +731,7 @@ function AMparseIexpr(str) {
 
 function AMparseExpr(str,rightbracket) {
   var symbol, node, result, i, nodeList = [],
-  newFrag = document.createDocumentFragment();
+  newFrag = $('<frag>');
   do {
     str = AMremoveCharsAndBlanks(str,0);
     result = AMparseIexpr(str);
@@ -760,16 +742,16 @@ function AMparseExpr(str,rightbracket) {
       str = AMremoveCharsAndBlanks(str,symbol.input.length);
       result = AMparseIexpr(str);
       if (result[0] == null) // show box in place of missing argument
-        result[0] = createMmlNode("mo",document.createTextNode("\u25A1"));
+        result[0] = createMmlNode("mo","\u25A1");
       else AMremoveBrackets(result[0]);
       str = result[1];
       AMremoveBrackets(node);
       node = createMmlNode(symbol.tag,node);
-      node.appendChild(result[0]);
-      newFrag.appendChild(node);
+      node.append(result[0]);
+      newFrag.append(node);
       symbol = AMgetSymbol(str);
     } 
-    else if (node!=undefined) newFrag.appendChild(node);
+    else if (node!=undefined) newFrag.append(node);
   } while ((symbol.ttype != RIGHTBRACKET && 
            (symbol.ttype != LEFTRIGHT || rightbracket)
            || AMnestingDepth == 0) && symbol!=null && symbol.output!="");
@@ -802,10 +784,10 @@ function AMparseExpr(str,rightbracket) {
           if (matrix && i>1) matrix = pos[i].length == pos[i-2].length;
         }
         if (matrix) {
-          var row, frag, n, k, table = document.createDocumentFragment();
+          var row, frag, n, k, table = $('<frag>');
           for (i=0; i<m; i=i+2) {
-            row = document.createDocumentFragment();
-            frag = document.createDocumentFragment();
+            row = $('<frag>');
+            frag = $('<frag>');
             node = newFrag.firstChild; // <mrow>(-,-,...,-,-)</mrow>
             n = node.childNodes.length;
             k = 0;
@@ -813,16 +795,16 @@ function AMparseExpr(str,rightbracket) {
             for (j=1; j<n-1; j++) {
               if (typeof pos[i][k] != "undefined" && j==pos[i][k]){
                 node.removeChild(node.firstChild); //remove ,
-                row.appendChild(createMmlNode("mtd",frag));
+                row.append(createMmlNode("mtd",frag));
                 k++;
-              } else frag.appendChild(node.firstChild);
+              } else frag.append(node.firstChild);
             }
-            row.appendChild(createMmlNode("mtd",frag));
+            row.append(createMmlNode("mtd",frag));
             if (newFrag.childNodes.length>2) {
               newFrag.removeChild(newFrag.firstChild); //remove <mrow>)</mrow>
               newFrag.removeChild(newFrag.firstChild); //remove <mo>,</mo>
             }
-            table.appendChild(createMmlNode("mtr",row));
+            table.append(createMmlNode("mtr",row));
           }
           node = createMmlNode("mtable",table);
           if (typeof symbol.invisible == "boolean" && symbol.invisible) node.setAttribute("columnalign","left");
@@ -833,8 +815,8 @@ function AMparseExpr(str,rightbracket) {
     }
     str = AMremoveCharsAndBlanks(str,symbol.input.length);
     if (typeof symbol.invisible != "boolean" || !symbol.invisible) {
-      node = createMmlNode("mo",document.createTextNode(symbol.output));
-      newFrag.appendChild(node);
+      node = createMmlNode("mo",symbol.output);
+      newFrag.append(node);
     }
   }
   return [newFrag,str];
@@ -845,34 +827,31 @@ function parseMath(str,latex) {
   AMnestingDepth = 0;
   frag = latex ? LMparseExpr(str.replace(/^\s+/g,""),false,false)[0] : AMparseExpr(str.replace(/^\s+/g,""),false)[0];
   node = createMmlNode("mstyle",frag);
-  node.setAttribute("mathcolor",mathcolor);
-  node.setAttribute("fontfamily",mathfontfamily);
-  node.setAttribute("mathsize",mathfontsize);
-  if (displaystyle) node.setAttribute("displaystyle","true");
+  node.attr("mathcolor",mathcolor);
+  node.attr("fontfamily",mathfontfamily);
+  node.attr("mathsize",mathfontsize);
+  if (displaystyle) node.attr("displaystyle","true");
   node = createMmlNode("math",node);
   if (showasciiformulaonhover)                      //fixed by djhsu so newline
-    node.setAttribute("title",str.replace(/\s+/g," "));//does not show in Gecko
+    node.attr("title",str.replace(/\s+/g," "));//does not show in Gecko
   return node;
 }
 
 function strarr2docFrag(arr, linebreaks, latex) {
-  var newFrag=document.createDocumentFragment();
+  var newFrag=$('<frag>');
   var expr = false;
   for (var i=0; i<arr.length; i++) {
-    if (expr) newFrag.appendChild(parseMath(arr[i],latex));
+    if (expr) newFrag.append(parseMath(arr[i],latex));
     else {
       var arri = (linebreaks ? arr[i].split("\n\n") : [arr[i]]);
-      newFrag.appendChild(createElementXHTML("span").
-      appendChild(document.createTextNode(arri[0])));
+      newFrag.append("<span>"+arri[0]+"</span>");
       for (var j=1; j<arri.length; j++) {
-        newFrag.appendChild(createElementXHTML("p"));
-        newFrag.appendChild(createElementXHTML("span").
-        appendChild(document.createTextNode(arri[j])));
+        newFrag.append("p").append("<span>arri[j]</span>");
       }
     }
     expr = !expr;
   }
-  return newFrag;
+  return newFrag.children();
 }
 
 function AMautomathrec(str) {
@@ -938,7 +917,7 @@ function processNodeR(n, linebreaks,latex) {
           if (i%2==0) arr[i] = AMautomathrec(arr[i]);
       str = arr.join(AMdelimiter1);
       arr = str.split(AMdelimiter1);
-      for (i=0; i<arr.length; i++) // this is a problem ************
+      for (i=0; i<arr.length; i++) 
         arr[i]=arr[i].replace(/AMescape1/g,AMdelimiter1);
       }
       if (arr.length>1 || mtch) {
@@ -951,7 +930,7 @@ function processNodeR(n, linebreaks,latex) {
     }
    } else return 0;
   } else if (n.nodeName!="math") {
-	var n_children = n.children();
+	var n_children = n.children();// this is a problem ************
     for (i=0; i<n_children.length; i++)
       i += processNodeR(n_children.eq(i), linebreaks,latex);
   }
@@ -1492,7 +1471,7 @@ var LMpreviousSymbol,LMcurrentSymbol;
 
 function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
   var symbol, node, result, result2, i, st,// rightvert = false,
-    newFrag = document.createDocumentFragment();
+    newFrag = $('<frag>');
   str = LMremoveCharsAndBlanks(str,0);
   symbol = LMgetSymbol(str);             //either a token or a bracket or empty
   if (symbol == null || symbol.ttype == RIGHTBRACKET)
@@ -1519,7 +1498,7 @@ function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
       }
     }
     return [createMmlNode(symbol.tag,
-			document.createTextNode(symbol.output)),str,symbol.tag];
+			symbol.output),str,symbol.tag];
   case CONST:
     var output = symbol.output;
     if (isIE) {
@@ -1542,19 +1521,19 @@ function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
 	}
       }
     }
-    node = createMmlNode(symbol.tag,document.createTextNode(output));
+    node = createMmlNode(symbol.tag,output);
     return [node,str,symbol.tag];
   case LONG:  // added by DRW
-    node = createMmlNode(symbol.tag,document.createTextNode(symbol.output));
+    node = createMmlNode(symbol.tag,symbol.output);
     node.setAttribute("minsize","1.5");
     node.setAttribute("maxsize","1.5");
     node = createMmlNode("mover",node);
-    node.appendChild(createMmlNode("mspace"));
+    node.append(createMmlNode("mspace"));
     return [node,str,symbol.tag];
   case STRETCHY:  // added by DRW
     if (isIE && symbol.input == "\\backslash")
 	symbol.output = "\\";	// doesn't expand, but then nor does "\u2216"
-    node = createMmlNode(symbol.tag,document.createTextNode(symbol.output));
+    node = createMmlNode(symbol.tag,symbol.output);
     if (symbol.input == "|" || symbol.input == "\\vert" ||
 	symbol.input == "\\|" || symbol.input == "\\Vert") {
 	  node.setAttribute("lspace","0em");
@@ -1573,12 +1552,12 @@ function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
     if (symbol == null)
 	return [null,str,null];
     str = LMremoveCharsAndBlanks(str,symbol.input.length);
-    node = createMmlNode(symbol.tag,document.createTextNode(symbol.output));
+    node = createMmlNode(symbol.tag,symbol.output);
     if (isIE) {		// to get brackets to expand
       var space = createMmlNode("mspace");
       space.setAttribute("height",atval+"ex");
       node = createMmlNode("mrow",node);
-      node.appendChild(space);
+      node.append(space);
     } else {		// ignored in IE
       node.setAttribute("minsize",atval);
       node.setAttribute("maxsize",atval);
@@ -1598,9 +1577,9 @@ function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
 	(typeof symbol.invisible == "boolean" && symbol.invisible))
       node = createMmlNode("mrow",result[0]);
     else {
-      node = createMmlNode("mo",document.createTextNode(symbol.output));
+      node = createMmlNode("mo",symbol.output);
       node = createMmlNode("mrow",node);
-      node.appendChild(result[0]);
+      node.append(result[0]);
     }
     return [node,result[1],result[2]];
   case MATRIX:	 //read (expr+)
@@ -1625,7 +1604,7 @@ function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
       }
       result = LMparseExpr("{"+str,true,true);
 //    if (result[0]==null) return [createMmlNode("mo",
-//			   document.createTextNode(symbol.input)),str];
+//			   symbol.input),str];
       node = createMmlNode("mtable",result[0]);
       mask = mask.replace(/l/g,"left ");
       mask = mask.replace(/r/g,"right ");
@@ -1641,8 +1620,8 @@ function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
       var rspace = createMmlNode("mspace");
       rspace.setAttribute("width","0.167em");
       var node1 = createMmlNode("mrow",lspace);
-      node1.appendChild(node);
-      node1.appendChild(rspace);
+      node1.append(node);
+      node1.append(rspace);
       return [node1,result[1],null];
     } else {	// eqnarray
       result = LMparseExpr("{"+str,true,true);
@@ -1665,36 +1644,36 @@ function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
       if (st.charAt(0) == " ") {
 	node = createMmlNode("mspace");
 	node.setAttribute("width","0.33em");	// was 1ex
-	newFrag.appendChild(node);
+	newFrag.append(node);
       }
-      newFrag.appendChild(
-        createMmlNode(symbol.tag,document.createTextNode(st)));
+      newFrag.append(
+        createMmlNode(symbol.tag,st));
       if (st.charAt(st.length-1) == " ") {
 	node = createMmlNode("mspace");
 	node.setAttribute("width","0.33em");	// was 1ex
-	newFrag.appendChild(node);
+	newFrag.append(node);
       }
       str = LMremoveCharsAndBlanks(str,i+1);
       return [createMmlNode("mrow",newFrag),str,null];
   case UNARY:
       result = LMparseSexpr(str);
       if (result[0]==null) return [createMmlNode(symbol.tag,
-                             document.createTextNode(symbol.output)),str];
+                             symbol.output),str];
       if (typeof symbol.func == "boolean" && symbol.func) { // functions hack
 	st = str.charAt(0);
 //	if (st=="^" || st=="_" || st=="/" || st=="|" || st==",") {
 	if (st=="^" || st=="_" || st==",") {
 	  return [createMmlNode(symbol.tag,
-		    document.createTextNode(symbol.output)),str,symbol.tag];
+		    symbol.output),str,symbol.tag];
         } else {
 	  node = createMmlNode("mrow",
-	   createMmlNode(symbol.tag,document.createTextNode(symbol.output)));
+	   createMmlNode(symbol.tag,symbol.output));
 	  if (isIE) {
 	    var space = createMmlNode("mspace");
 	    space.setAttribute("width","0.167em");
-	    node.appendChild(space);
+	    node.append(space);
 	  }
-	  node.appendChild(result[0]);
+	  node.append(result[0]);
 	  return [node,result[1],symbol.tag];
         }
       }
@@ -1706,7 +1685,7 @@ function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
 	  node = createMmlNode(symbol.tag,result[0])
 //	  node.setAttribute("minsize","1");	// ignored
 //	  node = createMmlNode("mrow",node);  // hopefully unnecessary
-	  node.appendChild(space);
+	  node.append(space);
 	  return [node,result[1],symbol.tag];
 	} else
 	  return [createMmlNode(symbol.tag,result[0]),result[1],symbol.tag];
@@ -1725,7 +1704,7 @@ function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
 		else if (symbol.input == "\\tilde")
 			output = "\u0303";
 	}
-	var node1 = createMmlNode("mo",document.createTextNode(output));
+	var node1 = createMmlNode("mo",output);
 	if (symbol.input == "\\vec" || symbol.input == "\\check")
 						// don't allow to stretch
 	    node1.setAttribute("maxsize","1.2");
@@ -1736,7 +1715,7 @@ function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
 	  node1.setAttribute("accentunder","true");
 	else
 	  node1.setAttribute("accent","true");
-	node.appendChild(node1);
+	node.append(node1);
 	if (symbol.input == "\\overbrace" || symbol.input == "\\underbrace")
 	  node.ttype = UNDEROVER;
 	return [node,result[1],symbol.tag];
@@ -1753,9 +1732,9 @@ function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
                 else newst = newst + st.charAt(j);
               if (result[0].nodeName=="mi")
                 result[0]=createMmlNode("mo").
-                          appendChild(document.createTextNode(newst));
+                          append(newst);
               else result[0].replaceChild(createMmlNode("mo").
-          appendChild(document.createTextNode(newst)),result[0].childNodes[i]);
+          append(newst),result[0].childNodes[i]);
             }
         }
         node = createMmlNode(symbol.tag,result[0]);
@@ -1768,22 +1747,22 @@ function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
   case BINARY:
     result = LMparseSexpr(str);
     if (result[0]==null) return [createMmlNode("mo",
-			   document.createTextNode(symbol.input)),str,null];
+			   symbol.input),str,null];
     result2 = LMparseSexpr(result[1]);
     if (result2[0]==null) return [createMmlNode("mo",
-			   document.createTextNode(symbol.input)),str,null];
+			   symbol.input),str,null];
     if (symbol.input=="\\root" || symbol.input=="\\stackrel")
-      newFrag.appendChild(result2[0]);
-    newFrag.appendChild(result[0]);
-    if (symbol.input=="\\frac") newFrag.appendChild(result2[0]);
+      newFrag.append(result2[0]);
+    newFrag.append(result[0]);
+    if (symbol.input=="\\frac") newFrag.append(result2[0]);
     return [createMmlNode(symbol.tag,newFrag),result2[1],symbol.tag];
   case INFIX:
     str = LMremoveCharsAndBlanks(str,symbol.input.length);
-    return [createMmlNode("mo",document.createTextNode(symbol.output)),
+    return [createMmlNode("mo",symbol.output),
 	str,symbol.tag];
   default:
     return [createMmlNode(symbol.tag,        //its a constant
-	document.createTextNode(symbol.output)),str,symbol.tag];
+	symbol.output),str,symbol.tag];
   }
 }
 
@@ -1800,7 +1779,7 @@ function LMparseIexpr(str) {
     str = LMremoveCharsAndBlanks(str,symbol.input.length);
     result = LMparseSexpr(str);
     if (result[0] == null) // show box in place of missing argument
-      result[0] = createMmlNode("mo",document.createTextNode("\u25A1"));
+      result[0] = createMmlNode("mo","\u25A1");
     str = result[1];
     tag = result[2];
     if (symbol.input == "_" || symbol.input == "^") {
@@ -1815,21 +1794,21 @@ function LMparseIexpr(str) {
 	str = res2[1];
 	tag = res2[2];  // leave space between x_1^2 and a following sin etc.
         node = createMmlNode((underover?"munderover":"msubsup"),node);
-        node.appendChild(result[0]);
-        node.appendChild(res2[0]);
+        node.append(result[0]);
+        node.append(res2[0]);
       } else if (symbol.input == "_") {
 	node = createMmlNode((underover?"munder":"msub"),node);
-        node.appendChild(result[0]);
+        node.append(result[0]);
       } else {
 	node = createMmlNode((underover?"mover":"msup"),node);
-        node.appendChild(result[0]);
+        node.append(result[0]);
       }
       node = createMmlNode("mrow",node); // so sum does not stretch
     } else {
       node = createMmlNode(symbol.tag,node);
       if (symbol.input == "\\atop" || symbol.input == "\\choose")
 	node.setAttribute("linethickness","0ex");
-      node.appendChild(result[0]);
+      node.append(result[0]);
       if (symbol.input == "\\choose")
 	node = createMmlNode("mfenced",node);
     }
@@ -1839,7 +1818,7 @@ function LMparseIexpr(str) {
 
 function LMparseExpr(str,rightbracket,matrix) {
   var symbol, node, result, i, tag,
-  newFrag = document.createDocumentFragment();
+  newFrag = $('<frag>');
   do {
     str = LMremoveCharsAndBlanks(str,0);
     result = LMparseIexpr(str);
@@ -1854,9 +1833,9 @@ function LMparseExpr(str,rightbracket,matrix) {
 	  var space = createMmlNode("mspace");
 	  space.setAttribute("width","0.167em");
 	  node = createMmlNode("mrow",node);
-	  node.appendChild(space);
+	  node.append(space);
       }
-      newFrag.appendChild(node);
+      newFrag.append(node);
     }
   } while ((symbol.ttype != RIGHTBRACKET)
         && symbol!=null && symbol.output!="");
@@ -1886,32 +1865,32 @@ function LMparseExpr(str,rightbracket,matrix) {
 	    if (node.childNodes[j].firstChild.nodeValue=="&")
 	      pos[i][pos[i].length]=j;
         }
-	var row, frag, n, k, table = document.createDocumentFragment();
+	var row, frag, n, k, table = $('<frag>');
 	for (i=0; i<m; i=i+2) {
-	  row = document.createDocumentFragment();
-	  frag = document.createDocumentFragment();
+	  row = $('<frag>');
+	  frag = $('<frag>');
 	  node = newFrag.firstChild; // <mrow> -&-&...&-&- </mrow>
 	  n = node.childNodes.length;
 	  k = 0;
 	  for (j=0; j<n; j++) {
 	    if (typeof pos[i][k] != "undefined" && j==pos[i][k]){
 	      node.removeChild(node.firstChild); //remove &
-	      row.appendChild(createMmlNode("mtd",frag));
+	      row.append(createMmlNode("mtd",frag));
 	      k++;
-	    } else frag.appendChild(node.firstChild);
+	    } else frag.append(node.firstChild);
 	  }
-	  row.appendChild(createMmlNode("mtd",frag));
+	  row.append(createMmlNode("mtd",frag));
 	  if (newFrag.childNodes.length>2) {
 	    newFrag.removeChild(newFrag.firstChild); //remove <mrow> </mrow>
 	    newFrag.removeChild(newFrag.firstChild); //remove <mo>&</mo>
 	  }
-	  table.appendChild(createMmlNode("mtr",row));
+	  table.append(createMmlNode("mtr",row));
 	}
 	return [table,str];
     }
     if (typeof symbol.invisible != "boolean" || !symbol.invisible) {
-      node = createMmlNode("mo",document.createTextNode(symbol.output));
-      newFrag.appendChild(node);
+      node = createMmlNode("mo",symbol.output);
+      newFrag.append(node);
     }
   }
   return [newFrag,str,tag];
@@ -1953,8 +1932,8 @@ function ASCIIandgraphformatting(st) {
 //st = st.replace(/<\/?font.*?>/gi,""); // do this only in amath...endamath
   st = st.replace(/(Proof:)/g,"<i>$1</i>");
   st = st.replace(/QED/g,"&nbsp; &nbsp; &#x25A1;");
-  st = st.replace(/(\\?end{?a?math}?)/ig,"<span></span>$1");
-  st = st.replace(/(\bamath\b|\\begin{a?math})/ig,"<span></span>$1");
+//  st = st.replace(/(\\?end{?a?math}?)/ig,"<span></span>$1");
+  //st = st.replace(/(\bamath\b|\\begin{a?math})/ig,"<span></span>$1");
   st = st.replace(/([>\n])(Theorem|Lemma|Proposition|Corollary|Definition|Example|Remark|Problem|Exercise|Conjecture|Solution)(:|\W\W?(\w|\s|-|\.)*?\W?:)/g,"$1<b>$2$3</b>");
   st = st.replace(/<embed\s+class\s?=\s?"?ASCIIsvg"?/gi,"<embed class=\"ASCIIsvg\" src=\""+dsvglocation+"d.svg\" wmode=\"transparent\"");
   st = st.replace(/(?:\\begin{a?graph}|\bagraph|\(:graph\s)((.|\n)*?)(?:\\end{a?graph}|enda?graph|:\))/g,function(s,t){return "<table><tr><td><div class=\"ASCIIsvg\"><embed class=\"ASCIIsvg\" src=\""+dsvglocation+"d.svg\" wmode=\"transparent\" script=\'"+t.replace(/<\/?(br|p|pre)\s?\/?>/gi,"\n")+"\'/></div></td></tr></table>"});
@@ -2067,7 +2046,6 @@ var strokewidth, strokedasharray, stroke, fill, strokeopacity, fillopacity;
 var fontstyle, fontfamily, fontsize, fontweight, fontstroke, fontfill;
 var marker, endpoints, dynamic = {};
 var picture, svgpicture, doc, width, height;
-var isIE = document.createElementNS==null;
 
 var cpi = "\u03C0", ctheta = "\u03B8";      // character for pi, theta
 var log = function(x) { return ln(x)/ln(10) };
@@ -2183,10 +2161,7 @@ function checkSVG(){
 }
 
 function setText(st,id) { // add text to an existing node with given id
-  var node = document.getElementById(id);
-  if (node!=null)
-    if (node.childNodes.length!=0) node.childNodes[0].nodeValue = st;
-    else node.appendChild(document.createTextNode(st));
+  $('#'+id).text(st);
 }
 
 function getX(evt) { // return mouse x-coord in user coordinate system
@@ -2278,7 +2253,7 @@ function drawPictures() { // main routine; called after webpage has loaded
       node.setAttribute("cols",Math.max(Math.min(60,cols),20)+5);
 //      node.setAttribute("style","display:block");
       if (isIE) src = src.replace(/([^\r])\n/g,"$1\r");
-      node.appendChild(document.createTextNode(src));
+      node.append(document.createTextNode(src));
       if (src.indexOf("showcode()")==-1) node.style.display = "none";
       node.setAttribute("id","picture"+(index+1)+"input");
       picture.parentNode.insertBefore(node,picture.nextSibling);
@@ -2287,7 +2262,7 @@ function drawPictures() { // main routine; called after webpage has loaded
       node2.setAttribute("id","picture"+(index+1)+"button");
       if (isIE) node2.onclick = function() {updatePicture(this)};
       else node2.setAttribute("onclick","updatePicture(this)");
-      node2.appendChild(document.createTextNode("Update"));
+      node2.append(document.createTextNode("Update"));
       if (src.indexOf("showcode()")==-1) node2.style.display = "none";
       picture.parentNode.insertBefore(node2,node);
 //      picture.parentNode.insertBefore(document.createTextNode("ASCII"),node);
@@ -2529,18 +2504,18 @@ function initPicture(x_min,x_max,y_min,y_max) { // set up the graph
   node.setAttribute("width",width);
   node.setAttribute("height",height);
   node.setAttribute("style",backgroundstyle);
-  svgpicture.appendChild(node);
+  svgpicture.append(node);
   svgpicture.setAttribute("onmousemove","displayCoord(evt)");
   svgpicture.setAttribute("onmouseout","removeCoord(evt)");
   svgpicture.setAttribute("onclick","mClick(evt)");
   node = myCreateElementSVG("text"); // used for displayCoord
-  node.appendChild(doc.createTextNode(" "));
+  node.append(doc.createTextNode(" "));
   node.setAttribute("id","coords");
-  svgpicture.appendChild(node);
+  svgpicture.append(node);
   node = myCreateElementSVG("text"); // used for text display
-  node.appendChild(doc.createTextNode(" "));
+  node.append(doc.createTextNode(" "));
   node.setAttribute("id","coords");
-  svgpicture.appendChild(node);
+  svgpicture.append(node);
   border = defaultborder;
  }
  }
@@ -2554,7 +2529,7 @@ function line(p,q,id,endpts) { // segment connecting points p,q (coordinates in 
   if (node==null) {
     node = myCreateElementSVG("path");
     node.setAttribute("id", id);
-    svgpicture.appendChild(node);
+    svgpicture.append(node);
   }
   node.setAttribute("d","M"+(p[0]*xunitlength+origin[0])+","+
     (height-p[1]*yunitlength-origin[1])+" "+
@@ -2589,7 +2564,7 @@ function path(plist,id,c,endpts) {
   if (node==null) {
     node = myCreateElementSVG("path");
     node.setAttribute("id", id);
-    svgpicture.appendChild(node);
+    svgpicture.append(node);
   }
   if (typeof plist == "string") st = plist;
   else {
@@ -2637,7 +2612,7 @@ function circle(center,radius,id) { // coordinates in units
   if (node==null) {
     node = myCreateElementSVG("circle");
     node.setAttribute("id", id);
-    svgpicture.appendChild(node);
+    svgpicture.append(node);
   }
   node.setAttribute("cx",center[0]*xunitlength+origin[0]);
   node.setAttribute("cy",height-center[1]*yunitlength-origin[1]);
@@ -2670,7 +2645,7 @@ function arc(start,end,radius,id,largearc) { // coordinates in units
   if (node==null) {
     node = myCreateElementSVG("path");
     node.setAttribute("id", id);
-    svgpicture.appendChild(node);
+    svgpicture.append(node);
   }
   node.setAttribute("d","M"+(start[0]*xunitlength+origin[0])+","+
     (height-start[1]*yunitlength-origin[1])+" A"+radius*xunitlength+","+
@@ -2706,7 +2681,7 @@ function ellipse(center,rx,ry,id) { // coordinates in units
   if (node==null) {
     node = myCreateElementSVG("ellipse");
     node.setAttribute("id", id);
-    svgpicture.appendChild(node);
+    svgpicture.append(node);
   }
   node.setAttribute("cx",center[0]*xunitlength+origin[0]);
   node.setAttribute("cy",height-center[1]*yunitlength-origin[1]);
@@ -2729,7 +2704,7 @@ function rect(p,q,id,rx,ry) { // opposite corners in units, rounded by radii
   if (node==null) {
     node = myCreateElementSVG("rect");
     node.setAttribute("id", id);
-    svgpicture.appendChild(node);
+    svgpicture.append(node);
   }
   node.setAttribute("x",p[0]*xunitlength+origin[0]);
   node.setAttribute("y",height-q[1]*yunitlength-origin[1]);
@@ -2755,10 +2730,10 @@ function text(p,st,pos,id,fontsty) {
         node = createElementXHTML("div");
         node.setAttribute("id", id);
         node.style.position = "absolute";
-        dnode.appendChild(node);
+        dnode.append(node);
       }
       while (node.childNodes.length>0) node.removeChild(node.lastChild); 
-      node.appendChild(document.createTextNode(str));
+      node.append(document.createTextNode(str));
       if (/`/.test(str)) AMprocessNode(node); else LMprocessNode(node);
       dx = -node.offsetWidth/2;
       dy = -node.offsetHeight/2;
@@ -2784,8 +2759,8 @@ function text(p,st,pos,id,fontsty) {
   if (node==null) {
     node = myCreateElementSVG("text");
     node.setAttribute("id", id);
-    svgpicture.appendChild(node);
-    node.appendChild(doc.createTextNode(str));
+    svgpicture.append(node);
+    node.append(doc.createTextNode(str));
   }
   while (node.childNodes.length>1) node.removeChild(node.lastChild); 
   node.lastChild.nodeValue = "\xA0"+str+"\xA0";
@@ -2821,8 +2796,8 @@ function mtext(p,st,pos,fontsty,fontsz) { // method for updating text on an svg
   var node = this;
   if (this.nodeName=="svg") {
     node = myCreateElementSVG("text");
-    this.appendChild(node);
-    node.appendChild(doc.createTextNode(st));
+    this.append(node);
+    node.append(doc.createTextNode(st));
   }
   node.lastChild.nodeValue = st;
   node.setAttribute("x",p[0]+dx);
@@ -2842,7 +2817,7 @@ function image(imgurl,p,w,h,id) { // not working yet
   if (node==null) {
     node = myCreateElementSVG("image");
     node.setAttribute("id", id);
-    svgpicture.appendChild(node);
+    svgpicture.append(node);
   }
   node.setAttribute("x",p[0]*xunitlength+origin[0]);
   node.setAttribute("y",height-p[1]*yunitlength-origin[1]);
@@ -2860,7 +2835,7 @@ function ASdot(center,radius,s,f) { // coordinates in units, radius in pixel
   node.setAttribute("stroke-width", strokewidth);
   node.setAttribute("stroke", s);
   node.setAttribute("fill", f);
-  svgpicture.appendChild(node);
+  svgpicture.append(node);
 }
 
 function dot(center, typ, label, pos, id) {
@@ -2872,7 +2847,7 @@ function dot(center, typ, label, pos, id) {
     if (node==null) {
       node = myCreateElementSVG("path");
       node.setAttribute("id", id);
-      svgpicture.appendChild(node);
+      svgpicture.append(node);
     }
     if (typ=="+") {
       node.setAttribute("d",
@@ -2892,7 +2867,7 @@ function dot(center, typ, label, pos, id) {
     if (node==null) {
       node = myCreateElementSVG("circle");
       node.setAttribute("id", id);
-      svgpicture.appendChild(node);
+      svgpicture.append(node);
     }
     node.setAttribute("cx",cx);
     node.setAttribute("cy",cy);
@@ -2926,7 +2901,7 @@ function arrowhead(p,q) { // draw arrowhead at q (in units) add size param
     node.setAttribute("fill", stroke); /*was arrowfill*/
     node.setAttribute("stroke-opacity", strokeopacity);
     node.setAttribute("fill-opacity", fillopacity);
-    svgpicture.appendChild(node);    
+    svgpicture.append(node);    
   }
 }
 
@@ -2979,7 +2954,7 @@ function axes(dx,dy,labels,gdx,gdy) {
     pnode.setAttribute("stroke-width", .5);
     pnode.setAttribute("stroke", gridstroke);
     pnode.setAttribute("fill", fill);
-    svgpicture.appendChild(pnode);
+    svgpicture.append(pnode);
   }
   pnode = myCreateElementSVG("path");
   st="M0,"+(height-origin[1])+" "+width+","+
@@ -3019,7 +2994,7 @@ function axes(dx,dy,labels,gdx,gdy) {
   pnode.setAttribute("fill", fill);
   pnode.setAttribute("stroke-opacity", strokeopacity);
   pnode.setAttribute("fill-opacity", fillopacity);
-  svgpicture.appendChild(pnode);
+  svgpicture.append(pnode);
 }
 
 function mathjs(st) {
@@ -3266,7 +3241,7 @@ function calculate(inputId,outputId) {
   var n = outnode.childNodes.length;
   for (var i=0; i<n; i++)
     outnode.removeChild(outnode.firstChild);
-  outnode.appendChild(document.createTextNode(str));
+  outnode.append(document.createTextNode(str));
   AMprocessNode(outnode);
 }
 
