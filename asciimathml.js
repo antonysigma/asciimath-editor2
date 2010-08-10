@@ -510,11 +510,11 @@ function AMgetSymbol(str) {
 function AMremoveBrackets(node) {
   var st;
   if (node.nodeName=="mrow") {
-    st = node.firstChild.firstChild.nodeValue;
+    st = node.firstChild.firstChild.text();
     if (st=="(" || st=="[" || st=="{") node.removeChild(node.firstChild);
   }
   if (node.nodeName=="mrow") {
-    st = node.lastChild.firstChild.nodeValue;
+    st = node.lastChild.firstChild.text();
     if (st==")" || st=="]" || st=="}") node.removeChild(node.lastChild);
   }
 }
@@ -573,14 +573,14 @@ function AMparseSexpr(str) { //parses str and returns [node,tailstr]
       st = str.slice(1,i);
       if (st.charAt(0) == " ") {
         node = createMmlNode("mspace");
-        node.setAttribute("width","1ex");
+        node.attr("width","1ex");
         newFrag.append(node);
       }
       newFrag.append(
         createMmlNode(symbol.tag,st));
       if (st.charAt(st.length-1) == " ") {
         node = createMmlNode("mspace");
-        node.setAttribute("width","1ex");
+        node.attr("width","1ex");
         newFrag.append(node);
       }
       str = AMremoveCharsAndBlanks(str,i+1);
@@ -611,16 +611,16 @@ function AMparseSexpr(str) { //parses str and returns [node,tailstr]
         return [node,result[1]];
       } else {                        // font change command
         if (!isIE && typeof symbol.codes != "undefined") {
-          for (i=0; i<result[0].childNodes.length; i++)
-            if (result[0].childNodes[i].nodeName=="mi" || result[0].nodeName=="mi") {
-              st = (result[0].nodeName=="mi"?result[0].firstChild.nodeValue:
-                              result[0].childNodes[i].firstChild.nodeValue);
+          for (i=0; i<result[0].children().length; i++)
+            if (result[0].childNodes[i].nodeName=="mi" || result.nodeName=="mi") {
+              st = (result.nodeName=="mi"?result[0].firstChild.text():
+                              result[0].childNodes[i].firstChild.text());
               var newst = [];
               for (var j=0; j<st.length; j++)
                 if (st.charCodeAt(j)>64 && st.charCodeAt(j)<91) newst = newst +
                   String.fromCharCode(symbol.codes[st.charCodeAt(j)-65]);
                 else newst = newst + st.charAt(j);
-              if (result[0].nodeName=="mi")
+              if (result.nodeName=="mi")
                 result[0]=createMmlNode("mo").
                           append(newst);
               else result[0].replaceChild(createMmlNode("mo").
@@ -629,7 +629,7 @@ function AMparseSexpr(str) { //parses str and returns [node,tailstr]
             }
         }
         node = createMmlNode(symbol.tag,result[0]);
-        node.setAttribute(symbol.atname,symbol.atval);
+        node.attr(symbol.atname,symbol.atval);
         return [node,result[1]];
       }
   case BINARY:
@@ -653,12 +653,12 @@ function AMparseSexpr(str) { //parses str and returns [node,tailstr]
   case SPACE:
     str = AMremoveCharsAndBlanks(str,symbol.input.length); 
     node = createMmlNode("mspace");
-    node.setAttribute("width","1ex");
+    node.attr("width","1ex");
     newFrag.append(node);
     newFrag.append(
       createMmlNode(symbol.tag,symbol.output));
     node = createMmlNode("mspace");
-    node.setAttribute("width","1ex");
+    node.attr("width","1ex");
     newFrag.append(node);
     return [createMmlNode("mrow",newFrag),str];
   case LEFTRIGHT:
@@ -669,7 +669,7 @@ function AMparseSexpr(str) { //parses str and returns [node,tailstr]
     AMnestingDepth--;
     var st = "";
     if (result[0].lastChild!=null)
-      st = result[0].lastChild.firstChild.nodeValue;
+      st = result[0].lastChild.firstChild.text();
     if (st == "|") { // its an absolute value subterm
       node = createMmlNode("mo",symbol.output);
       node = createMmlNode("mrow",node);
@@ -757,29 +757,29 @@ function AMparseExpr(str,rightbracket) {
            || AMnestingDepth == 0) && symbol!=null && symbol.output!="");
   if (symbol.ttype == RIGHTBRACKET || symbol.ttype == LEFTRIGHT) {
 //    if (AMnestingDepth > 0) AMnestingDepth--;
-    var len = newFrag.childNodes.length;
-    if (len>0 && newFrag.childNodes[len-1].nodeName == "mrow" && len>1 &&
-      newFrag.childNodes[len-2].nodeName == "mo" &&
-      newFrag.childNodes[len-2].firstChild.nodeValue == ",") { //matrix
-      var right = newFrag.childNodes[len-1].lastChild.firstChild.nodeValue;
+    var len = newFrag.children().length;
+    if (len>0 && newFrag.children(':eq('+len-1+')').nodeName == "mrow" && len>1 &&
+      newFrag.children(':eq('+len-2+')').nodeName == "mo" &&
+      newFrag.filter('* :eq('+len-2+') :first').text() == ",") { //matrix
+      var right = newFrag.filter('* :eq('+len-1+') :last :first').text();
       if (right==")" || right=="]") {
-        var left = newFrag.childNodes[len-1].firstChild.firstChild.nodeValue;
+        var left = newFrag.filter('* :eq('+len-1+') :first :first').text();
         if (left=="(" && right==")" && symbol.output != "}" || 
             left=="[" && right=="]") {
         var pos = []; // positions of commas
         var matrix = true;
-        var m = newFrag.childNodes.length;
+        var m = newFrag.children().length;
         for (i=0; matrix && i<m; i=i+2) {
           pos[i] = [];
-          node = newFrag.childNodes[i];
-          if (matrix) matrix = node.nodeName=="mrow" && 
+          node = newFrag.children(':eq('+i+')');
+          if (matrix) matrix = node.text()=="mrow" && 
             (i==m-1 || node.nextSibling.nodeName=="mo" && 
-            node.nextSibling.firstChild.nodeValue==",")&&
-            node.firstChild.firstChild.nodeValue==left &&
-            node.lastChild.firstChild.nodeValue==right;
+            node.nextSibling.firstChild.text()==",")&&
+            node.firstChild.firstChild.text()==left &&
+            node.lastChild.firstChild.text()==right;
           if (matrix) 
-            for (var j=0; j<node.childNodes.length; j++)
-              if (node.childNodes[j].firstChild.nodeValue==",")
+            for (var j=0; j<node.children().length; j++)
+              if (node.childNodes[j].firstChild.text()==",")
                 pos[i][pos[i].length]=j;
           if (matrix && i>1) matrix = pos[i].length == pos[i-2].length;
         }
@@ -789,7 +789,7 @@ function AMparseExpr(str,rightbracket) {
             row = $('<frag>');
             frag = $('<frag>');
             node = newFrag.firstChild; // <mrow>(-,-,...,-,-)</mrow>
-            n = node.childNodes.length;
+            n = node.children().length;
             k = 0;
             node.removeChild(node.firstChild); //remove (
             for (j=1; j<n-1; j++) {
@@ -800,14 +800,14 @@ function AMparseExpr(str,rightbracket) {
               } else frag.append(node.firstChild);
             }
             row.append(createMmlNode("mtd",frag));
-            if (newFrag.childNodes.length>2) {
+            if (newFrag.children().length>2) {
               newFrag.removeChild(newFrag.firstChild); //remove <mrow>)</mrow>
               newFrag.removeChild(newFrag.firstChild); //remove <mo>,</mo>
             }
             table.append(createMmlNode("mtr",row));
           }
           node = createMmlNode("mtable",table);
-          if (typeof symbol.invisible == "boolean" && symbol.invisible) node.setAttribute("columnalign","left");
+          if (typeof symbol.invisible == "boolean" && symbol.invisible) node.attr("columnalign","left");
           newFrag.replaceChild(node,newFrag.firstChild);
         }
        }
@@ -887,7 +887,7 @@ function AMautomathrec(str) {
 
 function processNodeR(n, linebreaks,latex) {
   var mtch, str, arr, frg, i;
-  if (n.children() == null) {
+  if (n.children().length == 0) {
    if ((n.nodeType!=8 || linebreaks) &&
     n.parent("form textarea")==null) {
     str = n.text();
@@ -1470,8 +1470,8 @@ Each terminal symbol is translated into a corresponding mathml node.*/
 var LMpreviousSymbol,LMcurrentSymbol;
 
 function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
-  var symbol, node, result, result2, i, st,// rightvert = false,
-    newFrag = $('<frag>');
+  var symbol, node, result, result2, i, st;// rightvert = false,
+   //var newFrag = $('<frag>');
   str = LMremoveCharsAndBlanks(str,0);
   symbol = LMgetSymbol(str);             //either a token or a bracket or empty
   if (symbol == null || symbol.ttype == RIGHTBRACKET)
@@ -1486,7 +1486,7 @@ function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
   switch (symbol.ttype) {
   case SPACE:
     node = createMmlNode(symbol.tag);
-    node.setAttribute(symbol.atname,symbol.atval);
+    node.attr(symbol.atname,symbol.atval);
     return [node,str,symbol.tag];
   case UNDEROVER:
     if (isIE) {
@@ -1525,8 +1525,8 @@ function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
     return [node,str,symbol.tag];
   case LONG:  // added by DRW
     node = createMmlNode(symbol.tag,symbol.output);
-    node.setAttribute("minsize","1.5");
-    node.setAttribute("maxsize","1.5");
+    node.attr("minsize","1.5");
+    node.attr("maxsize","1.5");
     node = createMmlNode("mover",node);
     node.append(createMmlNode("mspace"));
     return [node,str,symbol.tag];
@@ -1536,10 +1536,10 @@ function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
     node = createMmlNode(symbol.tag,symbol.output);
     if (symbol.input == "|" || symbol.input == "\\vert" ||
 	symbol.input == "\\|" || symbol.input == "\\Vert") {
-	  node.setAttribute("lspace","0em");
-	  node.setAttribute("rspace","0em");
+	  node.attr("lspace","0em");
+	  node.attr("rspace","0em");
     }
-    node.setAttribute("maxsize",symbol.atval);  // don't allow to stretch here
+    node.attr("maxsize",symbol.atval);  // don't allow to stretch here
     if (symbol.rtag != null)
       return [node,str,symbol.rtag];
     else
@@ -1555,12 +1555,12 @@ function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
     node = createMmlNode(symbol.tag,symbol.output);
     if (isIE) {		// to get brackets to expand
       var space = createMmlNode("mspace");
-      space.setAttribute("height",atval+"ex");
+      space.attr("height",atval+"ex");
       node = createMmlNode("mrow",node);
       node.append(space);
     } else {		// ignored in IE
-      node.setAttribute("minsize",atval);
-      node.setAttribute("maxsize",atval);
+      node.attr("minsize",atval);
+      node.attr("maxsize",atval);
     }
     return [node,str,symbol.tag];
   case LEFTBRACKET:   //read (expr+)
@@ -1609,16 +1609,16 @@ function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
       mask = mask.replace(/l/g,"left ");
       mask = mask.replace(/r/g,"right ");
       mask = mask.replace(/c/g,"center ");
-      node.setAttribute("columnalign",mask);
-      node.setAttribute("displaystyle","false");
+      node.attr("columnalign",mask);
+      node.attr("displaystyle","false");
       if (isIE)
 	return [node,result[1],null];
 // trying to get a *little* bit of space around the array
 // (IE already includes it)
       var lspace = createMmlNode("mspace");
-      lspace.setAttribute("width","0.167em");
+      lspace.attr("width","0.167em");
       var rspace = createMmlNode("mspace");
-      rspace.setAttribute("width","0.167em");
+      rspace.attr("width","0.167em");
       var node1 = createMmlNode("mrow",lspace);
       node1.append(node);
       node1.append(rspace);
@@ -1627,11 +1627,11 @@ function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
       result = LMparseExpr("{"+str,true,true);
       node = createMmlNode("mtable",result[0]);
       if (isIE)
-	node.setAttribute("columnspacing","0.25em"); // best in practice?
+	node.attr("columnspacing","0.25em"); // best in practice?
       else
-	node.setAttribute("columnspacing","0.167em"); // correct (but ignored?)
-      node.setAttribute("columnalign","right center left");
-      node.setAttribute("displaystyle","true");
+	node.attr("columnspacing","0.167em"); // correct (but ignored?)
+      node.attr("columnalign","right center left");
+      node.attr("displaystyle","true");
       node = createMmlNode("mrow",node);
       return [node,result[1],null];
     }
@@ -1643,14 +1643,14 @@ function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
       st = str.slice(1,i);
       if (st.charAt(0) == " ") {
 	node = createMmlNode("mspace");
-	node.setAttribute("width","0.33em");	// was 1ex
+	node.attr("width","0.33em");	// was 1ex
 	newFrag.append(node);
       }
       newFrag.append(
         createMmlNode(symbol.tag,st));
       if (st.charAt(st.length-1) == " ") {
 	node = createMmlNode("mspace");
-	node.setAttribute("width","0.33em");	// was 1ex
+	node.attr("width","0.33em");	// was 1ex
 	newFrag.append(node);
       }
       str = LMremoveCharsAndBlanks(str,i+1);
@@ -1670,7 +1670,7 @@ function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
 	   createMmlNode(symbol.tag,symbol.output));
 	  if (isIE) {
 	    var space = createMmlNode("mspace");
-	    space.setAttribute("width","0.167em");
+	    space.attr("width","0.167em");
 	    node.append(space);
 	  }
 	  node.append(result[0]);
@@ -1680,10 +1680,10 @@ function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
       if (symbol.input == "\\sqrt") {		// sqrt
 	if (isIE) {	// set minsize, for \surd
 	  var space = createMmlNode("mspace");
-	  space.setAttribute("height","1.2ex");
-	  space.setAttribute("width","0em");	// probably no effect
+	  space.attr("height","1.2ex");
+	  space.attr("width","0em");	// probably no effect
 	  node = createMmlNode(symbol.tag,result[0])
-//	  node.setAttribute("minsize","1");	// ignored
+//	  node.attr("minsize","1");	// ignored
 //	  node = createMmlNode("mrow",node);  // hopefully unnecessary
 	  node.append(space);
 	  return [node,result[1],symbol.tag];
@@ -1707,30 +1707,30 @@ function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
 	var node1 = createMmlNode("mo",output);
 	if (symbol.input == "\\vec" || symbol.input == "\\check")
 						// don't allow to stretch
-	    node1.setAttribute("maxsize","1.2");
+	    node1.attr("maxsize","1.2");
 		 // why doesn't "1" work?  \vec nearly disappears in firefox
 	if (isIE && symbol.input == "\\bar")
-	    node1.setAttribute("maxsize","0.5");
+	    node1.attr("maxsize","0.5");
 	if (symbol.input == "\\underbrace" || symbol.input == "\\underline")
-	  node1.setAttribute("accentunder","true");
+	  node1.attr("accentunder","true");
 	else
-	  node1.setAttribute("accent","true");
+	  node1.attr("accent","true");
 	node.append(node1);
 	if (symbol.input == "\\overbrace" || symbol.input == "\\underbrace")
 	  node.ttype = UNDEROVER;
 	return [node,result[1],symbol.tag];
       } else {			      // font change or displaystyle command
         if (!isIE && typeof symbol.codes != "undefined") {
-          for (i=0; i<result[0].childNodes.length; i++)
-            if (result[0].childNodes[i].nodeName=="mi" || result[0].nodeName=="mi") {
-              st = (result[0].nodeName=="mi"?result[0].firstChild.nodeValue:
-                              result[0].childNodes[i].firstChild.nodeValue);
+          for (i=0; i<result[0].children().length; i++)
+            if (result[0].childNodes[i].nodeName=="mi" || result.nodeName=="mi") {
+              st = (result.nodeName=="mi"?result[0].firstChild.text():
+                              result[0].childNodes[i].firstChild.text());
               var newst = [];
               for (var j=0; j<st.length; j++)
                 if (st.charCodeAt(j)>64 && st.charCodeAt(j)<91) newst = newst +
                   String.fromCharCode(symbol.codes[st.charCodeAt(j)-65]);
                 else newst = newst + st.charAt(j);
-              if (result[0].nodeName=="mi")
+              if (result.nodeName=="mi")
                 result[0]=createMmlNode("mo").
                           append(newst);
               else result[0].replaceChild(createMmlNode("mo").
@@ -1738,10 +1738,10 @@ function LMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
             }
         }
         node = createMmlNode(symbol.tag,result[0]);
-        node.setAttribute(symbol.atname,symbol.atval);
+        node.attr(symbol.atname,symbol.atval);
 	if (symbol.input == "\\scriptstyle" ||
 	    symbol.input == "\\scriptscriptstyle")
-		node.setAttribute("displaystyle","false");
+		node.attr("displaystyle","false");
 	return [node,result[1],symbol.tag];
       }
   case BINARY:
@@ -1807,7 +1807,7 @@ function LMparseIexpr(str) {
     } else {
       node = createMmlNode(symbol.tag,node);
       if (symbol.input == "\\atop" || symbol.input == "\\choose")
-	node.setAttribute("linethickness","0ex");
+	node.attr("linethickness","0ex");
       node.append(result[0]);
       if (symbol.input == "\\choose")
 	node = createMmlNode("mfenced",node);
@@ -1831,7 +1831,7 @@ function LMparseExpr(str,rightbracket,matrix) {
 	typeof symbol.func == "boolean" && symbol.func) {
 			// Add space before \sin in 2\sin x or x\sin x
 	  var space = createMmlNode("mspace");
-	  space.setAttribute("width","0.167em");
+	  space.attr("width","0.167em");
 	  node = createMmlNode("mrow",node);
 	  node.append(space);
       }
@@ -1851,42 +1851,42 @@ function LMparseExpr(str,rightbracket,matrix) {
     }
     if (symbol!=null)
       str = LMremoveCharsAndBlanks(str,symbol.input.length); // ready to return
-    var len = newFrag.childNodes.length;
+    var len = newFrag.children().length;
     if (matrix &&
       len>0 && newFrag.childNodes[len-1].nodeName == "mrow" && len>1 &&
       newFrag.childNodes[len-2].nodeName == "mo" &&
-      newFrag.childNodes[len-2].firstChild.nodeValue == "&") { //matrix
+      newFrag.childNodes[len-2].firstChild.text() == "&") { //matrix
 	var pos = []; // positions of ampersands
-        var m = newFrag.childNodes.length;
+        var m = newFrag.children().length;
         for (i=0; matrix && i<m; i=i+2) {
           pos[i] = [];
           node = newFrag.childNodes[i];
-	  for (var j=0; j<node.childNodes.length; j++)
-	    if (node.childNodes[j].firstChild.nodeValue=="&")
+	  for (var j=0; j<node.children().length; j++)
+	    if (node.childNodes[j].firstChild.text()=="&")
 	      pos[i][pos[i].length]=j;
         }
 	var row, frag, n, k, table = $('<frag>');
 	for (i=0; i<m; i=i+2) {
 	  row = $('<frag>');
 	  frag = $('<frag>');
-	  node = newFrag.firstChild; // <mrow> -&-&...&-&- </mrow>
-	  n = node.childNodes.length;
+	  node = newFrag.children(':eq(0)'); // <mrow> -&-&...&-&- </mrow>
+	  n = node.children().length;
 	  k = 0;
 	  for (j=0; j<n; j++) {
 	    if (typeof pos[i][k] != "undefined" && j==pos[i][k]){
-	      node.removeChild(node.firstChild); //remove &
-	      row.append(createMmlNode("mtd",frag));
+	      node.children(':eq(0)').remove(); //remove &
+	      row.append(createMmlNode("mtd",frag.children()));
 	      k++;
-	    } else frag.append(node.firstChild);
+	    } else frag.append(node.children(':eq(0)'));
 	  }
 	  row.append(createMmlNode("mtd",frag));
-	  if (newFrag.childNodes.length>2) {
-	    newFrag.removeChild(newFrag.firstChild); //remove <mrow> </mrow>
-	    newFrag.removeChild(newFrag.firstChild); //remove <mo>&</mo>
+	  if (newFrag.children().length>2) {
+	    newFrag.filter('m:mrow:contains(" ")').remove(); //remove <mrow> </mrow>
+	    newFrag.filter('m:mo:contains("&")').remove(); //remove <mo>&</mo>
 	  }
-	  table.append(createMmlNode("mtr",row));
+	  table.append(createMmlNode("mtr",row.children()));
 	}
-	return [table,str];
+	return [table.children(),str];
     }
     if (typeof symbol.invisible != "boolean" || !symbol.invisible) {
       node = createMmlNode("mo",symbol.output);
@@ -2227,10 +2227,10 @@ function drawPictures() { // main routine; called after webpage has loaded
    }
    ht = picture.getAttribute("height");
    if (isIE) {
-     picture.setAttribute("wmode","transparent");
+     picture.attr("wmode","transparent");
 //alert("*"+picture.getAttribute("src")+dsvglocation);
 //adding d.svg dynamically greates problems in IE...
-//     if (picture.getAttribute("src")=="") picture.setAttribute("src",dsvglocation+"d.svg");
+//     if (picture.getAttribute("src")=="") picture.attr("src",dsvglocation+"d.svg");
    }
    if (document.getElementById("picture"+(index+1)+"mml")==null) {
      picture.parentNode.style.position = "relative";
@@ -2238,7 +2238,7 @@ function drawPictures() { // main routine; called after webpage has loaded
      node.style.position = "absolute";
      node.style.top = "0px";
      node.style.left = "0px";
-     node.setAttribute("id","picture"+(index+1)+"mml");
+     node.attr("id","picture"+(index+1)+"mml");
      picture.parentNode.insertBefore(node,picture.nextSibling);
    }
    if (ht==null) ht ="";
@@ -2249,19 +2249,19 @@ function drawPictures() { // main routine; called after webpage has loaded
       arr = src.split("\n");
       cols = 0;
       for (i=0;i<arr.length;i++) cols = Math.max(cols,arr[i].length);
-      node.setAttribute("rows",Math.min(10,arr.length)+1);
-      node.setAttribute("cols",Math.max(Math.min(60,cols),20)+5);
-//      node.setAttribute("style","display:block");
+      node.attr("rows",Math.min(10,arr.length)+1);
+      node.attr("cols",Math.max(Math.min(60,cols),20)+5);
+//      node.attr("style","display:block");
       if (isIE) src = src.replace(/([^\r])\n/g,"$1\r");
       node.append(document.createTextNode(src));
       if (src.indexOf("showcode()")==-1) node.style.display = "none";
-      node.setAttribute("id","picture"+(index+1)+"input");
+      node.attr("id","picture"+(index+1)+"input");
       picture.parentNode.insertBefore(node,picture.nextSibling);
       picture.parentNode.insertBefore(createElementXHTML("br"),node);
       node2 = createElementXHTML("button");
-      node2.setAttribute("id","picture"+(index+1)+"button");
+      node2.attr("id","picture"+(index+1)+"button");
       if (isIE) node2.onclick = function() {updatePicture(this)};
-      else node2.setAttribute("onclick","updatePicture(this)");
+      else node2.attr("onclick","updatePicture(this)");
       node2.append(document.createTextNode("Update"));
       if (src.indexOf("showcode()")==-1) node2.style.display = "none";
       picture.parentNode.insertBefore(node2,node);
@@ -2272,7 +2272,7 @@ function drawPictures() { // main routine; called after webpage has loaded
     dsvg = picture.getAttribute("src");
     if (id == null || id == "") {
       id = "picture"+(index+1);
-      picture.setAttribute("id",id);
+      picture.attr("id",id);
     }
     translateandeval(src);
   }
@@ -2435,12 +2435,12 @@ function initPicture(x_min,x_max,y_min,y_max) { // set up the graph
     width = picture.getAttribute("width");
     if (width==null || width=="") width=defaultwidth;
   }
-  picture.setAttribute("width",width);
+  picture.attr("width",width);
   if (height==null) { 
     height = picture.getAttribute("height");
     if (height==null || height=="") height=defaultheight;
   }
-  picture.setAttribute("height",height);
+  picture.attr("height",height);
   xunitlength = (width-2*border)/(xmax-xmin);
   yunitlength = xunitlength;
 //alert(xmin+" "+xmax+" "+ymin+" "+ymax)
@@ -2464,21 +2464,21 @@ function initPicture(x_min,x_max,y_min,y_max) { // set up the graph
       throw "wait";
     }
     svgpicture = picture.getSVGDocument().getElementById("root");
-    while (svgpicture.childNodes.length>0) 
+    while (svgpicture.children().length>0) 
       svgpicture.removeChild(svgpicture.lastChild); 
-    svgpicture.setAttribute("width",width);
-    svgpicture.setAttribute("height",height);
-    svgpicture.setAttribute("name",picture.getAttribute("id"));
+    svgpicture.attr("width",width);
+    svgpicture.attr("height",height);
+    svgpicture.attr("name",picture.getAttribute("id"));
     doc = picture.getSVGDocument();
   } else {
     var qnode = document.createElementNS("http://www.w3.org/2000/svg","svg");
-    qnode.setAttribute("id",picture.getAttribute("id"));
-    qnode.setAttribute("name",picture.getAttribute("id"));
-//    qnode.setAttribute("style","display:inline");
-    qnode.setAttribute("width",picture.getAttribute("width"));
-    qnode.setAttribute("height",picture.getAttribute("height"));
+    qnode.attr("id",picture.getAttribute("id"));
+    qnode.attr("name",picture.getAttribute("id"));
+//    qnode.attr("style","display:inline");
+    qnode.attr("width",picture.getAttribute("width"));
+    qnode.attr("height",picture.getAttribute("height"));
     picturepos = findPos(picture);
-//  qnode.setAttribute("xmlns:xlink","http://www.w3.org/1999/xlink");
+//  qnode.attr("xmlns:xlink","http://www.w3.org/1999/xlink");
     if (picture.parentNode!=null) {
       picture.parentNode.replaceChild(qnode,picture);
     } else {
@@ -2489,32 +2489,32 @@ function initPicture(x_min,x_max,y_min,y_max) { // set up the graph
   }
   var nd = document.getElementById(picture.getAttribute("id")+"mml");
   if (nd!=null) // clear out MathML layer
-    while (nd.childNodes.length>0) nd.removeChild(nd.lastChild); 
-  svgpicture.setAttribute("xunitlength",xunitlength);
-  svgpicture.setAttribute("yunitlength",yunitlength);
-  svgpicture.setAttribute("xmin",xmin);
-  svgpicture.setAttribute("xmax",xmax);
-  svgpicture.setAttribute("ymin",ymin);
-  svgpicture.setAttribute("ymax",ymax);
-  svgpicture.setAttribute("ox",origin[0]);
-  svgpicture.setAttribute("oy",origin[1]);
+    while (nd.children().length>0) nd.removeChild(nd.lastChild); 
+  svgpicture.attr("xunitlength",xunitlength);
+  svgpicture.attr("yunitlength",yunitlength);
+  svgpicture.attr("xmin",xmin);
+  svgpicture.attr("xmax",xmax);
+  svgpicture.attr("ymin",ymin);
+  svgpicture.attr("ymax",ymax);
+  svgpicture.attr("ox",origin[0]);
+  svgpicture.attr("oy",origin[1]);
   var node = myCreateElementSVG("rect");
-  node.setAttribute("x","0");
-  node.setAttribute("y","0");
-  node.setAttribute("width",width);
-  node.setAttribute("height",height);
-  node.setAttribute("style",backgroundstyle);
+  node.attr("x","0");
+  node.attr("y","0");
+  node.attr("width",width);
+  node.attr("height",height);
+  node.attr("style",backgroundstyle);
   svgpicture.append(node);
-  svgpicture.setAttribute("onmousemove","displayCoord(evt)");
-  svgpicture.setAttribute("onmouseout","removeCoord(evt)");
-  svgpicture.setAttribute("onclick","mClick(evt)");
+  svgpicture.attr("onmousemove","displayCoord(evt)");
+  svgpicture.attr("onmouseout","removeCoord(evt)");
+  svgpicture.attr("onclick","mClick(evt)");
   node = myCreateElementSVG("text"); // used for displayCoord
   node.append(doc.createTextNode(" "));
-  node.setAttribute("id","coords");
+  node.attr("id","coords");
   svgpicture.append(node);
   node = myCreateElementSVG("text"); // used for text display
   node.append(doc.createTextNode(" "));
-  node.setAttribute("id","coords");
+  node.attr("id","coords");
   svgpicture.append(node);
   border = defaultborder;
  }
@@ -2528,19 +2528,19 @@ function line(p,q,id,endpts) { // segment connecting points p,q (coordinates in 
   if (id!=null) node = doc.getElementById(id);
   if (node==null) {
     node = myCreateElementSVG("path");
-    node.setAttribute("id", id);
+    node.attr("id", id);
     svgpicture.append(node);
   }
-  node.setAttribute("d","M"+(p[0]*xunitlength+origin[0])+","+
+  node.attr("d","M"+(p[0]*xunitlength+origin[0])+","+
     (height-p[1]*yunitlength-origin[1])+" "+
     (q[0]*xunitlength+origin[0])+","+(height-q[1]*yunitlength-origin[1]));
-  node.setAttribute("stroke-width", strokewidth);
+  node.attr("stroke-width", strokewidth);
   if (strokedasharray!=null) 
-    node.setAttribute("stroke-dasharray", strokedasharray);
-  node.setAttribute("stroke", stroke);
-  node.setAttribute("fill", fill);
-  node.setAttribute("stroke-opacity", strokeopacity);
-  node.setAttribute("fill-opacity", fillopacity);
+    node.attr("stroke-dasharray", strokedasharray);
+  node.attr("stroke", stroke);
+  node.attr("fill", fill);
+  node.attr("stroke-opacity", strokeopacity);
+  node.attr("fill-opacity", fillopacity);
   if (marker=="dot" || marker=="arrowdot") {
     ASdot(p,markersize,markerstroke,markerfill);
     if (marker=="arrowdot") arrowhead(p,q);
@@ -2563,7 +2563,7 @@ function path(plist,id,c,endpts) {
   if (id!=null) node = doc.getElementById(id);
   if (node==null) {
     node = myCreateElementSVG("path");
-    node.setAttribute("id", id);
+    node.attr("id", id);
     svgpicture.append(node);
   }
   if (typeof plist == "string") st = plist;
@@ -2575,14 +2575,14 @@ function path(plist,id,c,endpts) {
       st += (plist[i][0]*xunitlength+origin[0])+","+
             (height-plist[i][1]*yunitlength-origin[1])+" ";
   }
-  node.setAttribute("d", st);
-  node.setAttribute("stroke-width", strokewidth);
+  node.attr("d", st);
+  node.attr("stroke-width", strokewidth);
   if (strokedasharray!=null) 
-    node.setAttribute("stroke-dasharray", strokedasharray);
-  node.setAttribute("stroke", stroke);
-  node.setAttribute("fill", fill);
-  node.setAttribute("stroke-opacity", strokeopacity);
-  node.setAttribute("fill-opacity", fillopacity);
+    node.attr("stroke-dasharray", strokedasharray);
+  node.attr("stroke", stroke);
+  node.attr("fill", fill);
+  node.attr("stroke-opacity", strokeopacity);
+  node.attr("fill-opacity", fillopacity);
   if (marker=="dot" || marker=="arrowdot")
     for (i=0; i<plist.length; i++)
       if (c!="C" && c!="T" || i!=1 && i!=2)
@@ -2611,17 +2611,17 @@ function circle(center,radius,id) { // coordinates in units
   if (id!=null) node = doc.getElementById(id);
   if (node==null) {
     node = myCreateElementSVG("circle");
-    node.setAttribute("id", id);
+    node.attr("id", id);
     svgpicture.append(node);
   }
-  node.setAttribute("cx",center[0]*xunitlength+origin[0]);
-  node.setAttribute("cy",height-center[1]*yunitlength-origin[1]);
-  node.setAttribute("r",radius*xunitlength);
-  node.setAttribute("stroke-width", strokewidth);
-  node.setAttribute("stroke", stroke);
-  node.setAttribute("fill", fill);
-  node.setAttribute("stroke-opacity", strokeopacity);
-  node.setAttribute("fill-opacity", fillopacity);
+  node.attr("cx",center[0]*xunitlength+origin[0]);
+  node.attr("cy",height-center[1]*yunitlength-origin[1]);
+  node.attr("r",radius*xunitlength);
+  node.attr("stroke-width", strokewidth);
+  node.attr("stroke", stroke);
+  node.attr("fill", fill);
+  node.attr("stroke-opacity", strokeopacity);
+  node.attr("fill-opacity", fillopacity);
 }
 
 function loop(p,d,id) { 
@@ -2644,18 +2644,18 @@ function arc(start,end,radius,id,largearc) { // coordinates in units
   }
   if (node==null) {
     node = myCreateElementSVG("path");
-    node.setAttribute("id", id);
+    node.attr("id", id);
     svgpicture.append(node);
   }
-  node.setAttribute("d","M"+(start[0]*xunitlength+origin[0])+","+
+  node.attr("d","M"+(start[0]*xunitlength+origin[0])+","+
     (height-start[1]*yunitlength-origin[1])+" A"+radius*xunitlength+","+
      radius*yunitlength+" 0 "+largearc+",0 "+(end[0]*xunitlength+origin[0])+","+
     (height-end[1]*yunitlength-origin[1]));
-  node.setAttribute("stroke-width", strokewidth);
-  node.setAttribute("stroke", stroke);
-  node.setAttribute("fill", fill);
-  node.setAttribute("stroke-opacity", strokeopacity);
-  node.setAttribute("fill-opacity", fillopacity);
+  node.attr("stroke-width", strokewidth);
+  node.attr("stroke", stroke);
+  node.attr("fill", fill);
+  node.attr("stroke-opacity", strokeopacity);
+  node.attr("fill-opacity", fillopacity);
   if (marker=="arrow" || marker=="arrowdot") {
     u = [(end[1]-start[1])/4,(start[0]-end[0])/4];
     v = [(end[0]-start[0])/2,(end[1]-start[1])/2];
@@ -2680,18 +2680,18 @@ function ellipse(center,rx,ry,id) { // coordinates in units
   if (id!=null) node = doc.getElementById(id);
   if (node==null) {
     node = myCreateElementSVG("ellipse");
-    node.setAttribute("id", id);
+    node.attr("id", id);
     svgpicture.append(node);
   }
-  node.setAttribute("cx",center[0]*xunitlength+origin[0]);
-  node.setAttribute("cy",height-center[1]*yunitlength-origin[1]);
-  node.setAttribute("rx",rx*xunitlength);
-  node.setAttribute("ry",ry*yunitlength);
-  node.setAttribute("stroke-width", strokewidth);
-  node.setAttribute("stroke", stroke);
-  node.setAttribute("fill", fill);
-  node.setAttribute("stroke-opacity", strokeopacity);
-  node.setAttribute("fill-opacity", fillopacity);
+  node.attr("cx",center[0]*xunitlength+origin[0]);
+  node.attr("cy",height-center[1]*yunitlength-origin[1]);
+  node.attr("rx",rx*xunitlength);
+  node.attr("ry",ry*yunitlength);
+  node.attr("stroke-width", strokewidth);
+  node.attr("stroke", stroke);
+  node.attr("fill", fill);
+  node.attr("stroke-opacity", strokeopacity);
+  node.attr("fill-opacity", fillopacity);
 }
 
 function triangle(p,q,r,id) {
@@ -2703,20 +2703,20 @@ function rect(p,q,id,rx,ry) { // opposite corners in units, rounded by radii
   if (id!=null) node = doc.getElementById(id);
   if (node==null) {
     node = myCreateElementSVG("rect");
-    node.setAttribute("id", id);
+    node.attr("id", id);
     svgpicture.append(node);
   }
-  node.setAttribute("x",p[0]*xunitlength+origin[0]);
-  node.setAttribute("y",height-q[1]*yunitlength-origin[1]);
-  node.setAttribute("width",(q[0]-p[0])*xunitlength);
-  node.setAttribute("height",(q[1]-p[1])*yunitlength);
-  if (rx!=null) node.setAttribute("rx",rx*xunitlength);
-  if (ry!=null) node.setAttribute("ry",ry*yunitlength);
-  node.setAttribute("stroke-width", strokewidth);
-  node.setAttribute("stroke", stroke);
-  node.setAttribute("fill", fill);
-  node.setAttribute("stroke-opacity", strokeopacity);
-  node.setAttribute("fill-opacity", fillopacity);
+  node.attr("x",p[0]*xunitlength+origin[0]);
+  node.attr("y",height-q[1]*yunitlength-origin[1]);
+  node.attr("width",(q[0]-p[0])*xunitlength);
+  node.attr("height",(q[1]-p[1])*yunitlength);
+  if (rx!=null) node.attr("rx",rx*xunitlength);
+  if (ry!=null) node.attr("ry",ry*yunitlength);
+  node.attr("stroke-width", strokewidth);
+  node.attr("stroke", stroke);
+  node.attr("fill", fill);
+  node.attr("stroke-opacity", strokeopacity);
+  node.attr("fill-opacity", fillopacity);
 }
 
 function text(p,st,pos,id,fontsty) {
@@ -2726,13 +2726,13 @@ function text(p,st,pos,id,fontsty) {
     if (dnode!=null) {
       if (id!=null) node = document.getElementById(id);
       if (node==null) {
-//alert(dnode.childNodes.length)
+//alert(dnode.children().length)
         node = createElementXHTML("div");
-        node.setAttribute("id", id);
+        node.attr("id", id);
         node.style.position = "absolute";
         dnode.append(node);
       }
-      while (node.childNodes.length>0) node.removeChild(node.lastChild); 
+      while (node.children().length>0) node.removeChild(node.lastChild); 
       node.append(document.createTextNode(str));
       if (/`/.test(str)) AMprocessNode(node); else LMprocessNode(node);
       dx = -node.offsetWidth/2;
@@ -2758,22 +2758,22 @@ function text(p,st,pos,id,fontsty) {
   if (id!=null) node = doc.getElementById(id);
   if (node==null) {
     node = myCreateElementSVG("text");
-    node.setAttribute("id", id);
+    node.attr("id", id);
     svgpicture.append(node);
     node.append(doc.createTextNode(str));
   }
-  while (node.childNodes.length>1) node.removeChild(node.lastChild); 
-  node.lastChild.nodeValue = "\xA0"+str+"\xA0";
-  node.setAttribute("x",p[0]*xunitlength+origin[0]+dx);
-  node.setAttribute("y",height-p[1]*yunitlength-origin[1]+dy);
-  node.setAttribute("font-style",(fontsty!=null?fontsty:
+  while (node.children().length>1) node.removeChild(node.lastChild); 
+  node.lastChild.text() = "\xA0"+str+"\xA0";
+  node.attr("x",p[0]*xunitlength+origin[0]+dx);
+  node.attr("y",height-p[1]*yunitlength-origin[1]+dy);
+  node.attr("font-style",(fontsty!=null?fontsty:
     (str.search(/^[a-zA-Z]$/)!=-1?"italic":fontstyle)));
-  node.setAttribute("font-family",fontfamily);
-  node.setAttribute("font-size",fontsize);
-  node.setAttribute("font-weight",fontweight);
-  node.setAttribute("text-anchor",textanchor);
-  if (fontstroke!="none") node.setAttribute("stroke",fontstroke);
-  if (fontfill!="none") node.setAttribute("fill",fontfill);
+  node.attr("font-family",fontfamily);
+  node.attr("font-size",fontsize);
+  node.attr("font-weight",fontweight);
+  node.attr("text-anchor",textanchor);
+  if (fontstroke!="none") node.attr("stroke",fontstroke);
+  if (fontfill!="none") node.attr("fill",fontfill);
   return p;
 }
 
@@ -2799,16 +2799,16 @@ function mtext(p,st,pos,fontsty,fontsz) { // method for updating text on an svg
     this.append(node);
     node.append(doc.createTextNode(st));
   }
-  node.lastChild.nodeValue = st;
-  node.setAttribute("x",p[0]+dx);
-  node.setAttribute("y",p[1]+dy);
-  node.setAttribute("font-style",(fontsty!=null?fontsty:fontstyle));
-  node.setAttribute("font-family",fontfamily);
-  node.setAttribute("font-size",(fontsz!=null?fontsz:fontsize));
-  node.setAttribute("font-weight",fontweight);
-  node.setAttribute("text-anchor",textanchor);
-  if (fontstroke!="none") node.setAttribute("stroke",fontstroke);
-  if (fontfill!="none") node.setAttribute("fill",fontfill);
+  node.lastChild.text() = st;
+  node.attr("x",p[0]+dx);
+  node.attr("y",p[1]+dy);
+  node.attr("font-style",(fontsty!=null?fontsty:fontstyle));
+  node.attr("font-family",fontfamily);
+  node.attr("font-size",(fontsz!=null?fontsz:fontsize));
+  node.attr("font-weight",fontweight);
+  node.attr("text-anchor",textanchor);
+  if (fontstroke!="none") node.attr("stroke",fontstroke);
+  if (fontfill!="none") node.attr("fill",fontfill);
 }
 
 function image(imgurl,p,w,h,id) { // not working yet
@@ -2816,25 +2816,25 @@ function image(imgurl,p,w,h,id) { // not working yet
   if (id!=null) node = doc.getElementById(id);
   if (node==null) {
     node = myCreateElementSVG("image");
-    node.setAttribute("id", id);
+    node.attr("id", id);
     svgpicture.append(node);
   }
-  node.setAttribute("x",p[0]*xunitlength+origin[0]);
-  node.setAttribute("y",height-p[1]*yunitlength-origin[1]);
-  node.setAttribute("width",w);
-  node.setAttribute("height",h);
-  node.setAttribute("xlink:href", imgurl);
+  node.attr("x",p[0]*xunitlength+origin[0]);
+  node.attr("y",height-p[1]*yunitlength-origin[1]);
+  node.attr("width",w);
+  node.attr("height",h);
+  node.attr("xlink:href", imgurl);
 }
 
 function ASdot(center,radius,s,f) { // coordinates in units, radius in pixel
   if (s==null) s = stroke; if (f==null) f = fill;
   var node = myCreateElementSVG("circle");
-  node.setAttribute("cx",center[0]*xunitlength+origin[0]);
-  node.setAttribute("cy",height-center[1]*yunitlength-origin[1]);
-  node.setAttribute("r",radius);
-  node.setAttribute("stroke-width", strokewidth);
-  node.setAttribute("stroke", s);
-  node.setAttribute("fill", f);
+  node.attr("cx",center[0]*xunitlength+origin[0]);
+  node.attr("cy",height-center[1]*yunitlength-origin[1]);
+  node.attr("r",radius);
+  node.attr("stroke-width", strokewidth);
+  node.attr("stroke", s);
+  node.attr("fill", f);
   svgpicture.append(node);
 }
 
@@ -2846,35 +2846,35 @@ function dot(center, typ, label, pos, id) {
   if (typ=="+" || typ=="-" || typ=="|") {
     if (node==null) {
       node = myCreateElementSVG("path");
-      node.setAttribute("id", id);
+      node.attr("id", id);
       svgpicture.append(node);
     }
     if (typ=="+") {
-      node.setAttribute("d",
+      node.attr("d",
         " M "+(cx-ticklength)+" "+cy+" L "+(cx+ticklength)+" "+cy+
         " M "+cx+" "+(cy-ticklength)+" L "+cx+" "+(cy+ticklength));
-      node.setAttribute("stroke-width", .5);
-      node.setAttribute("stroke", axesstroke);
+      node.attr("stroke-width", .5);
+      node.attr("stroke", axesstroke);
     } else {
-      if (typ=="-") node.setAttribute("d",
+      if (typ=="-") node.attr("d",
         " M "+(cx-ticklength)+" "+cy+" L "+(cx+ticklength)+" "+cy);
-      else node.setAttribute("d",
+      else node.attr("d",
         " M "+cx+" "+(cy-ticklength)+" L "+cx+" "+(cy+ticklength));
-      node.setAttribute("stroke-width", strokewidth);
-      node.setAttribute("stroke", stroke);
+      node.attr("stroke-width", strokewidth);
+      node.attr("stroke", stroke);
     }
   } else {
     if (node==null) {
       node = myCreateElementSVG("circle");
-      node.setAttribute("id", id);
+      node.attr("id", id);
       svgpicture.append(node);
     }
-    node.setAttribute("cx",cx);
-    node.setAttribute("cy",cy);
-    node.setAttribute("r",dotradius);
-    node.setAttribute("stroke-width", strokewidth);
-    node.setAttribute("stroke", stroke);
-    node.setAttribute("fill", (typ=="open"?"white":
+    node.attr("cx",cx);
+    node.attr("cy",cy);
+    node.attr("r",dotradius);
+    node.attr("stroke-width", strokewidth);
+    node.attr("stroke", stroke);
+    node.attr("fill", (typ=="open"?"white":
                               (typ=="closed"?stroke:markerfill)));
   }
   if (label!=null) 
@@ -2893,14 +2893,14 @@ function arrowhead(p,q) { // draw arrowhead at q (in units) add size param
     u = [u[0]/d, u[1]/d];
     up = [-u[1],u[0]];
     var node = myCreateElementSVG("path");
-    node.setAttribute("d","M "+(w[0]-15*u[0]-4*up[0])+" "+
+    node.attr("d","M "+(w[0]-15*u[0]-4*up[0])+" "+
       (w[1]-15*u[1]-4*up[1])+" L "+(w[0]-3*u[0])+" "+(w[1]-3*u[1])+" L "+
       (w[0]-15*u[0]+4*up[0])+" "+(w[1]-15*u[1]+4*up[1])+" z");
-    node.setAttribute("stroke-width", markerstrokewidth);
-    node.setAttribute("stroke", stroke); /*was markerstroke*/
-    node.setAttribute("fill", stroke); /*was arrowfill*/
-    node.setAttribute("stroke-opacity", strokeopacity);
-    node.setAttribute("fill-opacity", fillopacity);
+    node.attr("stroke-width", markerstrokewidth);
+    node.attr("stroke", stroke); /*was markerstroke*/
+    node.attr("fill", stroke); /*was arrowfill*/
+    node.attr("stroke-opacity", strokeopacity);
+    node.attr("fill-opacity", fillopacity);
     svgpicture.append(node);    
   }
 }
@@ -2950,10 +2950,10 @@ function axes(dx,dy,labels,gdx,gdy) {
       st += " M0,"+y+" "+width+","+y;
     for (y = height-origin[1]-gdy; y>0; y = y-gdy)
       st += " M0,"+y+" "+width+","+y;
-    pnode.setAttribute("d",st);
-    pnode.setAttribute("stroke-width", .5);
-    pnode.setAttribute("stroke", gridstroke);
-    pnode.setAttribute("fill", fill);
+    pnode.attr("d",st);
+    pnode.attr("stroke-width", .5);
+    pnode.attr("stroke", gridstroke);
+    pnode.attr("fill", fill);
     svgpicture.append(pnode);
   }
   pnode = myCreateElementSVG("path");
@@ -2988,12 +2988,12 @@ function axes(dx,dy,labels,gdx,gdy) {
       text([lx,y],chopZ(y.toFixed(ddy)),lyp);
   }
   fontsize = defaultfontsize;
-  pnode.setAttribute("d",st);
-  pnode.setAttribute("stroke-width", .5);
-  pnode.setAttribute("stroke", axesstroke);
-  pnode.setAttribute("fill", fill);
-  pnode.setAttribute("stroke-opacity", strokeopacity);
-  pnode.setAttribute("fill-opacity", fillopacity);
+  pnode.attr("d",st);
+  pnode.attr("stroke-width", .5);
+  pnode.attr("stroke", axesstroke);
+  pnode.attr("fill", fill);
+  pnode.attr("stroke-opacity", strokeopacity);
+  pnode.attr("fill-opacity", fillopacity);
   svgpicture.append(pnode);
 }
 
@@ -3178,7 +3178,7 @@ function slopefield(fun,dx,dy) {
 
 function show_props(obj) {
   var result = "";
-  for (var i=0; i< obj.childNodes.length; i++)
+  for (var i=0; i< obj.children().length; i++)
     result += obj.childNodes.item(i) + "\n";
   return result;
 }
@@ -3238,7 +3238,7 @@ function calculate(inputId,outputId) {
     str = "`"+str+" =` "+(Math.abs(res-Math.round(res*1000000)/1000000)<1e-15?Math.round(res*1000000)/1000000:res)+err; 
   else if (str!="") str = "`"+str+"` = undefined"; //debug:+mathjs(str);
   var outnode = document.getElementById(outputId);
-  var n = outnode.childNodes.length;
+  var n = outnode.children().length;
   for (var i=0; i<n; i++)
     outnode.removeChild(outnode.firstChild);
   outnode.append(document.createTextNode(str));
