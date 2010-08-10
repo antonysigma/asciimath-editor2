@@ -98,32 +98,33 @@ renderQueue.runAll();
 }
 
 function AMdisplay(now,transform) {
-  if (document.getElementById("inputText") != null) {
-    if (AMkeyspressed == 20 || now) {
-      var str = document.getElementById("inputText").value;
-      var outnode = document.getElementById("outputNode");
-      var newnode = createElementXHTML("div");
+  if ($("#inputText") == null) return;
+    if (AMkeyspressed < 20 || !now) {
+ AMkeyspressed++;return;}
+
+$('body').css('cursor','progress');
+      var str = $("#inputText").val();
+      var outnode = $("#outputNode");
+      var newnode = $("<div>").attr('id','outputNode');
       var newFrag = document.createDocumentFragment();
-      newnode.setAttribute("id","outputNode");
-      outnode.parentNode.replaceChild(newnode,outnode);
-      outnode = document.getElementById("outputNode");
+      outnode.replaceWith(newnode);
+      outnode = $("#outputNode");
       var arr = str.split((isIE?"\r\n\r\n":"\n\n"));
       for (var i = 0; i<arr.length; i++){
-        var spn = createElementXHTML("p");
-        spn.appendChild(document.createTextNode(arr[i]));
-        outnode.appendChild(spn);
+        var spn = $("<p>").html(arr[i]);
+        outnode.append(spn);
       }
-      if (!isIE) LMprocessNode(outnode,true);
-      AMprocessNode(outnode,true);
-      if (isIE){
+      if (!isIE)
+{LMprocessNode(outnode,true);
+      AMprocessNode(outnode,true);}
+      else{
        LMprocessNode(outnode,true);
       
       if(transform) transformMathML(outnode);
        }
       
       AMkeyspressed = 0;
-    } else AMkeyspressed++;
-  }
+$('body').css('cursor','progress');
 }
 
 function AMchangeColumns(n) {
@@ -132,29 +133,24 @@ function AMchangeColumns(n) {
 }
 
 doubleblankmathdelimiter = true;
-
+/*
 function AMsetDoubleBlank() {
   doubleblankmathdelimiter = 
     document.getElementById("doubleblank").checked;
 }
-
+*/
 function AMviewMathML() {
   AMdisplay(true);
-  var str = document.getElementById("inputText").value;
-  var outnode = document.getElementById("outputNode");
-  var outstr = AMnode2string(outnode,"").slice(22).slice(0,-6);
+  var str = $('#inputText').val();
+  var outnode = $('#outputNode');
   outstr = '<?xml version="1.0"?>\r\<!-- Copy of ASCIIMathML input\r'+
   str.replace(/</g,'&lt;').replace(/>/g,'&gt;')+
 '-->\r<?xml-stylesheet type="text/xsl" href="mathml.xsl"?>\r\
 <html xmlns="http://www.w3.org/1999/xhtml"\r\
   xmlns:mml="http://www.w3.org/1998/Math/MathML">\r\
-<head>\r<title>...</title>\r</head>\r<body>\r'+
-outstr+'<\/body>\r<\/html>\r';
-  var newnode = createElementXHTML("textarea");
-  newnode.setAttribute("id","outputNode");
-  newnode.setAttribute("rows","30");
-  var node = document.getElementById("inputText");
-  newnode.setAttribute("cols",node.getAttribute("cols"));
-  newnode.appendChild(document.createTextNode(outstr));
-  outnode.parentNode.replaceChild(newnode,outnode);
+<head>\r<title>Untitled</title>\r</head>\r<body>\r'+
+outnode.xml()+'<\/body>\r<\/html>\r';
+  var newnode = $('<textarea>').attr({"id":"outputNode","rows":"30",
+	"cols":$('#inputText').attr("cols")}).text(outstr);  
+  outnode.replaceWith(newnode);
 }
