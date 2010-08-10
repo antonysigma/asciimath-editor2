@@ -26,11 +26,11 @@ var AMkeyspressed = 20;
 
 function initEditor() {
   initSymbols();
-  var body = document.getElementsByTagName("body")[0];
+  var body = $("body")[0];
   if (checkForMathML) {
     checkForMathML = false;
     var nd = checkMathML();
-    if (nd != null) body.insertBefore(nd,body.childNodes[0]);
+    if (nd != null) body.prepend(nd);
   }
   
   if(isIE){
@@ -154,3 +154,14 @@ outnode.xml()+'<\/body>\r<\/html>\r';
 	"cols":$('#inputText').attr("cols")}).text(outstr);  
   outnode.replaceWith(newnode);
 }
+//Onload
+$(function (){
+
+$('button:contains("800x600")').click(function (){AMchangeColumns(45)});
+$('button:contains("1024x768")').click(function (){AMchangeColumns(58)});
+$('button:contains("1400x1050")').click(function (){AMchangeColumns(61)});
+$('button:contains("Update")').click(function (){AMdisplay(true,true)});
+$('button:contains("View MathML")').click(function (){AMviewMathML()});
+initEditor();
+});
+
