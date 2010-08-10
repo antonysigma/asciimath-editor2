@@ -1,0 +1,367 @@
+<html>
+<head>
+<title>ASCIIsvg: Commands</title>
+<script type="text/javascript" 
+src="asciimathml.js"></script>
+<style type="text/css">
+<!--
+#menu, #subtitle, #author {text-align: left}
+#title, .display {text-align: center}
+body {font-family: Arial}
+-->
+</style>
+</head>
+<body bgcolor="navajowhite">
+<table cellpadding="10"><tr>
+<td valign="top" bgcolor="lightsalmon">
+<div id="menu">
+<div style="text-align: center">
+<p>
+<span style="color: purple; font-size: 27">ASCII</span><span 
+style="color: blue; font-size: 27">svg</span>
+</p>
+<center>\begin{graph}
+  border = 0; xmin=-2; xmax=2
+  axes()
+  stroke = "green"
+  plot(x^2*(x^2-2)/4-1/2)
+  stroke = "blue"
+  plot((x+1)x*(x-1))
+  stroke = "red"
+  plot(3x^2-1)
+\end{graph}</center>
+</div>
+<p/>
+<a href="http://www.chapman.edu/~jipsen/svg/asciisvg.html">
+Home Page</a><br/>
+Commands<br/>
+<a href="http://www.chapman.edu/~jipsen/svg/asciisvgeditor.html">
+Demo / Editor</a><br/>
+<a href="http://math.chapman.edu/cgi-bin/math.pl?ASCIIsvg_Gallery">
+Gallery</a><br/>
+<a href="http://www.chapman.edu/~jipsen/svg/asciisvgdownload">
+Download</a><br/>
+<a href="http://math.chapman.edu/cgi-bin/math.pl?ASCIIsvg_FAQ">
+ASCIIsvg FAQ</a><br/>
+<a href="http://math.chapman.edu/cgi-bin/math.pl?ASCIIsvg_Sandbox">
+Sandbox</a><br/>
+<a href="http://math.chapman.edu/cgi-bin/math.pl?ASCIIsvg_Comments_and_Suggestions">Comments</a><br/>
+<a href="http://www.chapman.edu/~jipsen/asciimath.html">
+ASCIIMathML</a><br/>
+</div>
+<p/>
+<center>\begin{graph}
+xmin = 0; xmax = 1; ymin = 0; noaxes()
+marker = "dot"
+a=text([0,1],"a",aboveleft)
+b=text([1,1],"b",aboveright)
+c=text([1,0],"c",right)
+d=text([0,0],"d",left)
+path([a,b,c,d,a,c,d,b])
+text([.5,0],"K4",below)
+\end{graph}</center>
+<p/>
+<div id="author">
+by <a href="http://www.chapman.edu/~jipsen/">Peter Jipsen</a><br/>
+<a href="http://www.chapman.edu/">Chapman University</a><br/>
+April 2004
+</div>
+</td><td>
+<h2 id="title">
+ASCIIsvg.js (ver 1.2): List of commands
+</h2>
+<b>ASCIIsvg.js</b> is a layer of JavaScript functions that can be used
+in any HTML document to produce inline Scalable Vector Graphics
+viewable with <b>both</b> Internet Explorer+<a
+href="http://www.adobe.com/svg">[Adobe SVGviewer]</a> and <a
+href="http://www1.chapman.edu/~jipsen/svg/svgenabledmozillafirefox.html">SVG 
+enabled Mozilla/Firefox</a>.
+<p>
+In addition the functions have a syntax that is closer to traditional
+mathematical notation and allows for simple algorithmic description of
+mathematical diagrams and graphs. Animation and interactivity with
+standard dynamic HTML are also very straight forward.
+<p>
+With this simplified approach to SVG, it is easy for university and
+highschool students to create mathematical diagrams on webpages using
+the standard <i>xy</i>-plane (rather than the "upsidedown" coordiante
+system of SVG). Along the way they learn many practical geometric,
+algorithmic and analytic techniques that go well beyond what is
+learned when graphing calculators or computer algebra systems are used
+to produce similar diagrams.
+<p>
+Thus SVG puts computer users back in the "driver seat" and allows them
+to easily produce graphical output from JavaScript programs. The
+ASCIIsvg layer makes this even more accessible and browser
+independent. (Of course SVG is also a browser independent standard,
+but currently Mozilla/Firefox and Internet Explorer take quite
+different approaches to integrating SVG.)
+<p>
+Brief descriptions of the ASCIIsvg commands and some examples follow
+below (optional arguments are enclosed in { }).
+<p>
+The online documentation (below) for how to use it is <b>slightly out of
+date</b>. Briefly, onload="drawPictures()" is no longer needed in the html
+file and 'initPicture(a,b,c,d)' is replaced by 'xmin=a; xmax=b;
+ymin=c; ymax=d; axes()' (or 'noaxes()' at the end). The height and
+width commands can be included in the script='...' attribute, in which
+case the person viewing the picture can examine and modify the
+asciisvg commands locally in their browser, so each picture "contains
+its own asciisvgeditor". There are also two more commands: loop([x,y])
+and arc([x,y],[u,v]) that are useful for drawing directed graphs.
+<p>
+A typical example is at <a href="http://www1.chapman.edu/~jipsen/svg/asciisvgsample1.html">
+http://www1.chapman.edu/~jipsen/svg/asciisvgsample1.html</a>
+
+<p>
+<table border="3" cellpadding="5"><tr><td>
+<b>&lt;embed width="300" height="300" src="d.svg" 
+script='</b>...ASCIIsvg commands...<b>'></b>
+</td>
+
+<td>
+This is the syntax for the tag that inserts the pictures on the
+webpage. The ASCIIsvg commands described below are put between
+<b>single quotes</b> in the <b>script</b> attribute. The <b>width</b> and 
+<b>height</b> are measured in pixels.
+</td></tr>
+
+<tr><td>
+<b>initPicture(xmin,xmax{,ymin{,ymax}})</b></td><td> This is
+usually the first command. The arguments set the
+coordinate system, with the last two arguments being optional. If <b>ymin</b>
+is omitted, the x-axis is placed in the middle of the picture. If
+<b>ymax</b> is omitted, the scale along the x-axis and y-axis is the
+same (this is the recommended setting). 
+</td></tr>
+
+<tr><td>
+<b>line([x,y],[u,v])</b>
+<pre id="picture3script"></pre>
+</td><td> 
+This command draws a straight line from the coordinate point <b>[x,y]</b> 
+to the coordinate point <b>[u,v]</b>.<br>
+\begin{graph}
+initPicture(-2,2,-2)
+line([-2,-2],[2,2])
+marker = "arrowdot"
+line([-2,2],[2,-2])
+\end{graph}
+</td></tr>
+
+<tr><td>
+<b>marker = "markersymbol"</b></td><td> Sets the default marker symbol
+that is drawn at the endpoints of lines and along the intermediate
+points along paths and curves. Currently possible values are:
+<b>"dot", "arrow", "arrowdot", "none"</b>.
+</td></tr>
+
+<tr><td>
+<b>path([p1,p2,p3,...,pn])</b></td><td> This command draws straight
+lines connecting the points <b>p1=[x1,y1]</b>, <b>p2=[x2,y2]</b>,...,
+<b>pn=[xn,yn]</b> in order. If <b>p1 = pn</b>, then this is a closed
+path representing a solid figure.
+</td></tr>
+
+<tr><td>
+<b>curve([p1,p2,p3,...,pn])</b>
+<pre id="picture4script"></pre>
+</td>
+<td> This command draws a curve through the specified points. It uses
+quadratic bezier curves between pairs of points, with the slope of the
+curve determined by the first two points and propagated through the
+curve by symmetry.<br> 
+\begin{graph}
+initPicture(0,1,0)
+a=[0,0]; b=[0,1]; c=[1,1]; d=[1,0]
+path([a,c,b,d,a])
+stroke="red"
+curve([[-.5,.5],b,c,d])
+\end{graph} 
+</td></tr>
+
+<tr><td>
+<b>stroke = "color"</b></td><td> Sets the default color for lines,
+paths, curves and outlines of solid figures. The available color names
+(and corresponding RGB values) are listed e.g. at <a
+href="http://www.spacetoday.org/BoilerRoom/Colors.html">http://www.spacetoday.org/BoilerRoom/Colors.html</a>.
+</td></tr>
+
+<tr><td>
+<b>strokewidth = "value"</b></td><td> Sets the default width (in
+pixels) for lines, paths, curves and outlines of solid figures.
+</td></tr>
+
+<tr><td>
+<b>fill = "color"</b></td><td> Sets the default color for filling in
+the inside of solid figures.
+</td></tr>
+
+<tr><td>
+<b>border = "25"</b></td><td> Sets the default width (in pixels) of a
+(blank) border that is added around the outside of the picture
+area. Initially the value is 25, which allows labels to be positioned
+above or below any picture element without being clipped. If changed,
+this command must precede the <b>initPicture</b> command.
+</td></tr>
+
+<tr><td>
+<b>circle([x,y],r)</b>
+<pre id="picture5script"></pre>
+</td>
+<td> Draws a circle with center at <b>[x,y]</b> and radius <b>r</b>.<br>
+\begin{graph}
+border=5
+initPicture(-1,1,-1)
+strokewidth=5
+a=[0,0]; stroke="red"
+circle(a,.9); stroke="orange"
+circle(a,.8); stroke="yellow"
+circle(a,.7)
+\end{graph}
+</td></tr>
+
+<tr><td>
+<b>ellipse([x,y],rx,ry)</b></td><td> Draws an ellipse centered at
+<b>[x,y]</b>, with horizontal radius <b>rx</b> and vertical radius
+<b>ry</b>.
+</td></tr>
+
+<tr><td>
+<b>arc([x,y],[u,v],r)</b> </td><td> Draws a circular arc in
+anticlockwise direction from <b>[x,y]</b> to <b>[u,v]</b> with radius
+<b>r</b> (should be bigger than half the distance between the points).
+Use two pieces for arcs larger than a semicircle.
+</td></tr>
+
+<tr><td>
+<b>rect([x,y],[u,v])</b>
+<pre id="picture6script"></pre>
+</td><td> Draws a rectangle with bottom left corner at <b>[x,y]</b> and top right corner at <b>[u,v]</b>.<br>
+\begin{graph}
+initPicture(0,1,0)
+a=[0,0]; b=[1,1]
+rect(a,b)
+stroke="red"
+ellipse([.5,.5],.5,.25)
+stroke="blue"
+ellipse([.5,.5],.25,.5)
+\end{graph}
+</td></tr>
+
+<tr><td>
+<b>text([x,y],"label" {,position})</b>
+<pre id="picture7script"></pre>
+</td>
+<td>
+Prints the string <b>"label"</b> at <b>[x,y]</b>. Optionally, the
+string can be positioned <b>above, below, left, right, aboveleft,
+aboveright, belowleft, belowright</b> of the point <b>[x,y]</b>. This
+command returns the coordinates of the point <b>[x,y]</b>, so it can
+be captured in a variable (if convenient).<br> 
+\begin{graph}
+initPicture(0,1,0)
+marker = "dot"
+a=text([0,1],"a",aboveleft)
+b=text([1,1],"b",aboveright)
+c=text([1,0],"c",right)
+d=text([0,0],"d",left)
+path([a,b,c,d,a,c,d,b])
+text([.5,0],"K4",below)
+\end{graph}
+</td></tr>
+
+<tr><td>
+<b>axes()</b>
+<pre id="picture8script"></pre>
+</td>
+
+<td> Draws coordinate axes on the picture (visible only if the origin
+is within the picture frame).<br> 
+\begin{graph}
+initPicture(-2,2)
+axes()
+\end{graph} 
+</td></tr>
+
+<tr><td>
+<b>grid()</b>
+<pre id="picture9script"></pre>
+</td>
+
+<td> Draws a grid of hroizontal and vertical lines one unit apart 
+on the picture.<br> 
+\begin{graph}
+initPicture(-2,2)
+grid()
+\end{graph} 
+</td></tr>
+</table>
+
+<p>
+<hr noshade size=1>
+<p>
+The following commands are used to create animated pictures. A group
+of drawing commands (as described above) are placed in a separate
+<b>&lt;script></b> tag inside their own
+function, say <b>function update() {...}</b>. Each of these commands
+is invoked with an additional parameter <b>"id"</b>, which is 
+the name of a new identifier attached to the particular
+graphics element that is created by the command. It ensures that
+this graphics elements is <em>modified</em> each time the function
+<b>update()</b> is called. (If "id" is omitted, the command will simply 
+draw an additional copy of the updated graphics element.) Some examples of
+animated pictures can be found in the <a href="http://math.chapman.edu/cgi-bin/math.pl?ASCIIsvg_Gallery">ASCIIsvg Gallery</a>.
+
+<p>
+<table border="3" cellpadding="5"><col width="200"><tr><td>
+<b>
+switchTo("picture1")<br/>
+...<br/>
+switchTo("picture2")<br/>
+...
+</b>
+</td>
+<td>
+This command is required if there are more than one picture on
+the webpage. It selects which picture is the target of the subsequent
+drawing commands. Pictures are given the default names
+<b>picture1, picture2, ...</b> numbered from the top of the page. These
+names can be overridden by explicit <b>id="name"</b> attributes in the
+<b>&lt;embed></b> tag.
+</td></tr>
+
+<tr><td>
+<b>getX(), getY()</b></td><td> These commands return the current
+<b>x</b> and <b>y</b> position of the mouse pointer (within the
+coordinate system of the picture).
+</td></tr>
+
+<tr><td>
+<b>setText("value","ident")</b></td><td> This command sets the text value of
+an HTML element that has the identifier <b>"ident"</b> attached to it. Usually
+it is used with <b>&lt;span id="ident"></span></b>, and after the 
+<b>setText</b> command the string <b>"value"</b> is inserted as the
+content of the <b>&lt;span></b> element.
+</td></tr></table>
+
+<p>
+Any valid JavaScript code may be used in the <b>script='...'</b> attribute.
+For longer programs it is preferable to put them in a separate function
+inside a standard <b>&lt;script>...&lt;/script></b> tag and include only
+a function call in the <b>script='...'</b> attribute since 
+syntactically incorrect code
+otherwise does not produce helpful error messages.
+</p>
+
+<hr/>
+</td></tr>
+</table>
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-2263958-1";
+urchinTracker();
+</script>
+</body>
+</html>

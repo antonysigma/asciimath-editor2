@@ -107,18 +107,22 @@ function init(){
 }
 
 function checkMathML(){
-  if (navigator.appName.slice(0,8)=="Netscape") 
-    if (navigator.appVersion.slice(0,1)>="5") noMathML = null;
+noMathML = true;
+var browserType = navigator.userAgent;
+  if (browserType.indexOf("Firefox")!=-1) noMathML = false;
+	else if (browserType.indexOf("Chrome")!=-1) noMathML = true;
+  else if (browserType.indexOf("Netscape")!=-1) 
+    if (navigator.appVersion.slice(0,1)>="5") noMathML = false;
     else noMathML = true;
-  else if (navigator.appName.slice(0,9)=="Microsoft")
+  else if (browserType.indexOf("Microsoft")!=-1)
     try {
         var ActiveX = new ActiveXObject("MathPlayer.Factory.1");
-        noMathML = null;
+        noMathML = false;
     } catch (e) {
         noMathML = true;
     }
-  else if (navigator.appName.slice(0,5)=="Opera") 
-    if (navigator.appVersion.slice(0,3)>="9.5") noMathML = null;
+  else if (browserType.indexOf("Opera")!=-1) // works only for 9.50b1
+    if (navigator.appVersion.slice(0,3)>="9.5") noMathML = false;
   else noMathML = true;
 //noMathML = true; //uncomment to check
   if (noMathML && notifyIfNoMathML) {
@@ -2181,19 +2185,23 @@ function findPos(obj) { // top-left corner of obj on HTML page in pixel
 }
 
 function checkSVG(){
-  if (navigator.appName.slice(0,8)=="Netscape") 
-    if (window['SVGElement']) noSVG = null;
+noSVG = true;
+var browserType = navigator.userAgent;
+  if (browserType.indexOf("Firefox")!=-1) noSVG = false;
+	else if (browserType.indexOf("Chrome")!=-1) noSVG = false;
+  else if (browserType.indexOf("Netscape")!=-1) 
+    if (window['SVGElement']) noSVG = false;
     else noSVG = true;
-  else if (navigator.appName.slice(0,9)=="Microsoft")
+  else if (browserType.indexOf("Microsoft")!=-1)
     try {
-      var oSVG=eval("new ActiveXObject('Adobe.SVGCtl.3');");
-        noSVG = null;
+      var oSVG=new ActiveXObject('Adobe.SVGCtl.3');
+        noSVG = false;
     } catch (e) {
         noSVG = true;
     }
-  else if (navigator.appName.slice(0,5)=="Opera") // works only for 9.50b1
-    noSVG = null;
-  else noSVG = true;
+  else if (browserType.indexOf("Opera")!=-1) // works only for 9.50b1
+    if (navigator.appVersion.slice(0,3)>="9.5") noMathML = false;
+  else noMathML = true;
 //noSVG = true; //uncomment to check
   if (noSVG && notifyIfNoSVG) {
     var msg = "To view the ASCIIsvg images use Internet Explorer + Adobe SVGviewer or Mozilla Firefox 2.0 or later."
@@ -3189,7 +3197,7 @@ function plot(fun,x_min,x_max,points,id,endpts) {
 //alert(typeof g(min))
   for (var t = min; t <= max; t += inc) {
     gt = g(t);
-    if (!(isNaN(gt)||Math.abs(gt)=="Infinity")) pth[pth.length] = [f(t), gt];
+    if (!(isNaN(gt)||Math.abs(gt)==Infinity)) pth[pth.length] = [f(t), gt];
   }
   path(pth,name,null,endpts);
   return pth;
@@ -3213,7 +3221,7 @@ function slopefield(fun,dx,dy) {
     for (y = y_min; y <= ymax; y += dy) {
       gxy = g(x,y);
       if (!isNaN(gxy)) {
-        if (Math.abs(gxy)=="Infinity") {u = 0; v = dz;}
+        if (Math.abs(gxy)==Infinity) {u = 0; v = dz;}
         else {u = dz/Math.sqrt(1+gxy*gxy); v = gxy*u;}
         line([x-u,y-v],[x+u,y+v]);
       }
@@ -3280,7 +3288,7 @@ function calculate(inputId,outputId) {
   } catch(e) {
     err = "syntax incomplete";
   }
-  if (!isNaN(res) && res!="Infinity") 
+  if (!isNaN(res) && res!=Infinity) 
     str = "`"+str+" =` "+(Math.abs(res-Math.round(res*1000000)/1000000)<1e-15?Math.round(res*1000000)/1000000:res)+err; 
   else if (str!="") str = "`"+str+"` = undefined"; //debug:+mathjs(str);
   var outnode = document.getElementById(outputId);
