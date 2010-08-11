@@ -113,6 +113,8 @@ $('body').css('cursor','progress');
         var spn = $("<p>").html(arr[i]);
         outnode.append(spn);
       }
+	//convert from jquery object to DOM object
+	outnode = outnode[0];
 	//which is first
       if (!isIE)
 LMprocessNode(outnode,true);
@@ -127,8 +129,7 @@ $('body').css('cursor','default');
 }
 
 function AMchangeColumns(n) {
-  var node = document.getElementById("inputText");
-  node.setAttribute("cols",n);
+  $("#inputText").attr("cols",n);
 }
 
 doubleblankmathdelimiter = true;
