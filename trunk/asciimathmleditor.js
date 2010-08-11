@@ -158,9 +158,11 @@ SyntaxHighlighter.defaults['gutter'] = false;
 
 $('#inputText').keyup(function (){
 if(time_out_hash)clearTimeout(time_out_hash);
-time_out_hash = setTimeout('AMdisplay(false,true);time_out_hash=0',3000);
+time_out_hash = setTimeout('AMdisplay(false,true);drawPictures();time_out_hash=0',3000);
 });
-$('button:contains(Update)').click(function (){AMdisplay(true,true)});
 $('button:contains(View_MathML)').click(function (){AMviewMathML()});
 initEditor();
+$('table:has(caption:contains(Commands))').hide();
+
+$('button:contains(Update)').click(function (){AMdisplay(true,true);drawPictures()}).click();
 });
