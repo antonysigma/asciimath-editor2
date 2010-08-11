@@ -7,6 +7,7 @@
   "HTML Tidy for Linux/x86 (vers 25 March 2009), see www.w3.org" />
 
   <title>ASCIIMath Editor</title>
+<link rel="stylesheet" href="syntax/css/shCoreDefault.css" type="text/css" media=  "screen" />
   <link rel="stylesheet" href="pmathmlstyle.css" type="text/css" media=
   "screen" />
   <script src="jquery-1.4.2.min.js" type="text/javascript">
@@ -19,9 +20,15 @@
 </script>
   <script type="text/javascript" src="asciimathmleditor.js">
 </script>
+  <script type="text/javascript" src="syntax/js/shCore.js">
+</script>  <script type="text/javascript" src="syntax/js/shBrushXml.js">
+</script>
+
   <style type="text/css">
 /*<![CDATA[*/
-#outputNode {border:0.3em dashed;height:45%;overflow:scroll;}
+body .syntaxhighlighter .line {white-space: pre-wrap !important;}
+
+#outputNode {border:0.3em dashed;height:25em;overflow:scroll}
 #inputText {height:10em;width:100%}
   /*]]>*/
   </style>
