@@ -21,7 +21,7 @@ General Public License (at http://www.gnu.org/copyleft/gpl.html)
 for more details.
 */
 
-var AMkeyspressed = 20;
+//var AMkeyspressed = 20;
 
 function initEditor() {
   initSymbols();
@@ -80,8 +80,7 @@ var xml = new ActiveXObject("Microsoft.XMLDOM");
 xml.async = false;
 
 var outstr = AMnode2string(node,"").slice(22).slice(0,-6);
-outstr = '<?xml version="1.0" ?><span xmlns="http://www.w3.org/1999/xhtml" '+
-'xmlns:mml="http://www.w3.org/1998/Math/MathML">'+outstr+'<\/span>';
+outstr = '<?xml version="1.0" ?><span xmlns="http://www.w3.org/1999/xhtml"">'+outstr+'<\/span>';
 xml.loadXML(outstr);
 
 var html = xml.transformNode(xsl);
@@ -98,16 +97,14 @@ renderQueue.runAll();
 
 function AMdisplay(now,transform) {
   if ($("#inputText") == null) return;
-    if (AMkeyspressed < 20 && !now) {
- AMkeyspressed++;return;}
+  /*  if (AMkeyspressed < 20 && !now) {
+ AMkeyspressed++;return;}*/
 
 $('body').css('cursor','progress');
       var str = $("#inputText").val();
       var outnode = $("#outputNode");
-      var newnode = $("<div>").attr('id','outputNode');
       //var newFrag = document.createDocumentFragment();
-      outnode.replaceWith(newnode);
-      outnode = $("#outputNode");
+      outnode.html('');
       var arr = str.split((isIE?"\r\n\r\n":"\n\n"));
       for (var i = 0; i<arr.length; i++){
         var spn = $("<p>").html(arr[i]);
@@ -124,7 +121,7 @@ LMprocessNode(outnode,true);
       if(transform) transformMathML(outnode);
        }
 
-      AMkeyspressed = 0;
+//      AMkeyspressed = 0;
 $('body').css('cursor','default');
 }
 
@@ -145,23 +142,23 @@ function AMviewMathML() {
   var outnode = $('#outputNode');
   outstr = '<?xml version="1.0"?>\r\<!-- Copy of ASCIIMathML input\r'+
   str.replace(/</g,'&lt;').replace(/>/g,'&gt;')+
-'-->\r<?xml-stylesheet type="text/xsl" href="mathml.xsl"?>\r\
-<html xmlns="http://www.w3.org/1999/xhtml"\r\
-  xmlns:mml="http://www.w3.org/1998/Math/MathML">\r\
+'-->\r<?xml-stylesheet type="text/xsl" href="mathml.xsl"?>'
++
+'<html xmlns="http://www.w3.org/1999/xhtml">\r\
 <head>\r<title>Untitled</title>\r</head>\r<body>\r'+
-outnode.xml()+'<\/body>\r<\/html>\r';
-  var newnode = $('<textarea>').attr({"id":"outputNode","rows":"30",
-	"cols":$('#inputText').attr("cols")}).text(outstr);  
-  outnode.replaceWith(newnode);
+outnode+'<\/body>\r<\/html>\r';
+  var newnode = $('<pre>').text(outstr);
+  outnode.html('').append(newnode);
 }
 //Onload
+time_out_hash=0;
 $(function (){
-
-$('button:contains("800x600")').click(function (){AMchangeColumns(45)});
-$('button:contains("1024x768")').click(function (){AMchangeColumns(58)});
-$('button:contains("1400x1050")').click(function (){AMchangeColumns(61)});
-$('button:contains("Update")').click(function (){AMdisplay(true,true)});
-$('button:contains("View MathML")').click(function (){AMviewMathML()});
+$('#inputText').keyup(function (){
+if(time_out_hash)clearTimeout(time_out_hash);
+time_out_hash = setTimeout('AMdisplay(false,true);time_out_hash=0',3000);
+});
+$('button:contains(Update)').click(function (){AMdisplay(true,true)});
+$('button:contains(View_MathML)').click(function (){AMviewMathML()});
 initEditor();
 });
 
