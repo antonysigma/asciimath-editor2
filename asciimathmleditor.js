@@ -139,18 +139,20 @@ function AMviewMathML() {
   AMdisplay(true);
   var str = $('#inputText').val();
   var outnode = $('#outputNode');
-  outstr = '<?xml version="1.0"?>\r\<!-- Copy of ASCIIMathML input\r'+
-  str.replace(/</g,'&lt;').replace(/>/g,'&gt;')+
-'-->\r<?xml-stylesheet type="text/xsl" href="mathml.xsl"?>\r\
-<html xmlns="http://www.w3.org/1999/xhtml">\r\
-<head>\r<title>Untitled</title>\r</head>\r<body>\r'+
-outnode.xml()+'<\/body>\r<\/html>\r';
+  outstr = '<?xml version="1.0"?>\r\<!-- Copy of ASCIIMathML input'+
+  $('<frag>'+str+'</frag>').xml()+
+'--><?xml-stylesheet type="text/xsl" href="mathml.xsl"?>\
+<html xmlns="http://www.w3.org/1999/xhtml">\
+<head><title>Untitled</title></head><body>'+
+outnode.xml()+'<\/body><\/html>';
   var newnode = $('<pre class="brush:xml">').text(outstr);
   outnode.html('').append(newnode);
-	//syntax highlight
-  SyntaxHighlighter.highlight();
-wrapLine();
 }
+
+function popup(data,mime_type){
+ window.location='data:'+mime_type+';charset=utf8,' + encodeURIComponent(data);
+}
+
 //Onload
 time_out_hash=0;
 $(function (){
@@ -160,9 +162,15 @@ $('#inputText').keyup(function (){
 if(time_out_hash)clearTimeout(time_out_hash);
 time_out_hash = setTimeout('AMdisplay(false,true);drawPictures();time_out_hash=0',3000);
 });
-$('button:contains(View_MathML)').click(function (){AMviewMathML()});
+$('button:contains(View_MathML)').click(function (){AMviewMathML()
+	//syntax highlight
+  SyntaxHighlighter.highlight();});
 initEditor();
 $('table:has(caption:contains(Commands))').hide();
 
 $('button:contains(Update)').click(function (){AMdisplay(true,true);drawPictures()}).click();
+$('button:contains(Download)').click(function (){
+	AMviewMathML();
+	popup($('#outputNode').text(),'text/text');
+});
 });
