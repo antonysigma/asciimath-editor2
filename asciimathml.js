@@ -1961,7 +1961,7 @@ function ASCIIandgraphformatting(st) {
 //  st = st.replace(/(\bamath\b|\\begin{a?math})/ig,"<span></span>$1");
   st = st.replace(/([>\n])(Theorem|Lemma|Proposition|Corollary|Definition|Example|Remark|Problem|Exercise|Conjecture|Solution)(:|\W\W?(\w|\s|-|\.)*?\W?:)/g,"$1<b>$2$3</b>");
   st = st.replace(/<embed\s+class\s?=\s?"?ASCIIsvg"?/gi,"<embed class=\"ASCIIsvg\" src=\""+dsvglocation+"d.svg\" wmode=\"transparent\"");
-  st = st.replace(/(?:\\begin{a?graph}|\bagraph|\(:graph\s)((.|\n)*?)(?:\\end{a?graph}|enda?graph|:\))/g,function(s,t){return "<table><tr><td><div class=\"ASCIIsvg\"><embed class=\"ASCIIsvg\" src=\""+dsvglocation+"d.svg\" wmode=\"transparent\" script=\'"+t.replace(/<\/?(br|p|pre)\s?\/?>/gi,"\n")+"\'/></div></td></tr></table>"});
+  st = st.replace(/(?:\\begin{a?graph}|\bagraph|\(:graph\s)((.|\n)*?)(?:\\end{a?graph}|enda?graph|:\))/g,function(s,t){return "<div class=\"ASCIIsvg\"><embed class=\"ASCIIsvg\" src=\""+dsvglocation+"d.svg\" wmode=\"transparent\" script=\'"+t.replace(/<\/?(br|p|pre)\s?\/?>/gi,"\n")+"\'/></div>"});
   st = st.replace(/insertASCIIMathCalculator/g,"<div class=\"ASCIIMathCalculator\"></div>");
 //alert(dsvglocation)
   return st
@@ -1978,7 +1978,10 @@ function LMprocessNode(n) {
        st.indexOf("\$\n")!=-1)&& !/edit-content|HTMLArea|wikiedit|wpTextbox1/.test(st)){
     if (!avoidinnerHTML && translateLaTeXformatting) 
       st = simpleLaTeXformatting(st);
-    if (st!=null && am && !avoidinnerHTML) {
+    if (st!=null && am && !avoidinnerHTML && 
+	//avoid transforming textarea texts
+	n.nodeName != 'BODY'
+) {
       st = ASCIIandgraphformatting(st);
     }
     st = st.replace(/%7E/g,"~"); // else PmWiki has url issues
