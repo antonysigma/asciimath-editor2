@@ -171,6 +171,6 @@ $('table:has(caption:contains(Commands))').hide();
 $('button:contains(Update)').click(function (){AMdisplay(true,true);drawPictures()}).click();
 $('button:contains(Download)').click(function (){
 	AMviewMathML();
-	popup($('#outputNode').text(),'text/text');
+	popup($('#outputNode').text(),'text/plain');
 });
 });
